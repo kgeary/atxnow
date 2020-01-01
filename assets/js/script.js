@@ -1,27 +1,38 @@
 function getArtistData(artist, success, fail) {
     artist = artist.replace(" ", "+");
 
-    const artistUrl = "https://www.theaudiodb.com/api/v1/json/1/search.php?s=" + artist;
-    const discographyUrl = "https://www.theaudiodb.com/api/v1/json/1/discography.php?s=" + artist;
+    // Create the API Urls
+    const base = "https://www.theaudiodb.com/api/v1/json/1";
+    const artistUrl = base + "/search.php?s=" + artist;
+    const discographyUrl = base + "/discography.php?s=" + artist;
 
+    // Get the Artist Info and the Discography
     Promise.all([
         axios.get(artistUrl),
         axios.get(discographyUrl)
-    ]).then(function(values) {
+    ])
+    .then(function (values) {
+        // Get the individual reponse values
         let [artistResponse, discographyResponse] = values;
+
+        //=====================================================
+        // DEBUGGING - Print the Response Objects
+        //=====================================================
         console.log("=== SUCCESS ===");
         console.log(artistResponse);
         console.log(discographyResponse);
-        //========================
-        // Make sure the artist was found
-        //========================
+
+        //=====================================================
+        // If artist was not found throw an error for catch
+        //=====================================================
         if (!artistResponse.data.artists) {
             throw new Error("no artists found");
         }
 
-        //========================
+        //=====================================================
         // PARSE ARTIST
-        //========================
+        //   Create an object with all the fields we care about
+        //=====================================================
         let artistData = artistResponse.data.artists[0];
         let artist = {
             id: artistData.idArtist,
@@ -38,9 +49,11 @@ function getArtistData(artist, success, fail) {
             website: artistData.strWebsite,
         };
 
-        //========================
+        //=====================================================
         // PARSE ALBUMS
-        //========================
+        //   Create an empty array and push a new album 
+        //   object for each iteration
+        //=====================================================
         let albums = [];
         let respAlbums = discographyResponse.data.album;
         for (let i = 0; i < respAlbums.length; i++) {
@@ -51,7 +64,6 @@ function getArtistData(artist, success, fail) {
                 year: album.intYearReleased,
             });
         }
-        // artist.albums = albums;
 
         console.table(artist);
         console.table(albums);
@@ -61,14 +73,13 @@ function getArtistData(artist, success, fail) {
         success(artist);
     })
     .catch(function (error) {
-        // handle error
+        //=====================================================
+        // Handle all Errors here
+        //=====================================================
         console.log("<<< ERROR >>>");
         console.log(error.message);
         console.log(error);
         fail(error);
-    })
-    .finally(function () {
-        // always executed
     });
 }
 
@@ -99,7 +110,7 @@ getArtistData(artist, displayArtists, onError);
 let btnSearchEl = document.getElementById("btnSearch");
 let inputArtistEl = document.getElementById("inputArtist");
 
-btnSearchEl.addEventListener("click", function(){
+btnSearchEl.addEventListener("click", function () {
     let artist = inputArtistEl.value;
     getArtistData(artist, displayArtists);
 });
