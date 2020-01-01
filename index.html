@@ -59,14 +59,24 @@
 
     <section class="section">
         <div class="container">
-            <label for="inputArtist">Artist:</label>
-            <input id="inputArtist" type="text">
-            <button id="btnSearch">Search</button>
+            <!-- Artist Search -->
+            <div class="field has-addons">
+                <p class="control">
+                    <input id="inputArtist" class="input" type="text" placeholder="Search for Artists">
+                </p>
+                <p class="control">
+                    <button id="btnSearch" class="button is-success">
+                        Search
+                    </button>
+                </p>
+            </div>
+
+            <!-- Artist Info Box -->
             <div class="box">
                 <h1 id="artistName" class="title"></h1>
                 <div class="level">
                     <div class="level-left">
-                        <table class="table is-striped is-bordered">
+                        <table class="table is-striped is-bordered level-item">
                             <tr>
                                 <th>Genre</th>
                                 <td id="artistGenre"></td>
@@ -83,14 +93,14 @@
                                 <td colspan="2"><img id="artistLogo" alt="logo"></td>
                             </tr>
                         </table>
-                    </div>
-                    <div class="level-right">
-                        <img id="artistThumb" class="thumbnail" alt="thumbnail" width="300px">
+                        <img id="artistThumb" class="level-item" alt="thumbnail" width="300px">
                     </div>
                 </div>
-
+                
+                <!-- Discography Here -->
                 <ul id="listDisc" class="list">
                 </ul>
+
             </div>
         </div>
     </section>
