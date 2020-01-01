@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>ATX Now - Your Guide to Shows in Austin</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="assets/css/bulma.css">
+    <!-- <link rel="stylesheet" href="assets/css/bulma.min.css"> -->
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+
+<body>
+    <nav class="level">
+        <!-- Left side -->
+        <div class="level-left">
+            <div class="level-item">
+                <p class="subtitle is-5">
+                    <strong>123</strong> posts
+                </p>
+            </div>
+            <div class="level-item">
+                <div class="field has-addons">
+                    <p class="control">
+                        <input class="input" type="text" placeholder="Find a post">
+                    </p>
+                    <p class="control">
+                        <button class="button is-success">
+                            Search
+                        </button>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right side -->
+        <div class="level-right">
+            <p class="level-item"><strong>All</strong></p>
+            <p class="level-item"><a>Published</a></p>
+            <p class="level-item"><a>Drafts</a></p>
+            <p class="level-item"><a>Deleted</a></p>
+            <p class="level-item"><a class="button is-success">New</a></p>
+        </div>
+    </nav>
+    <section class="hero">
+        <div class="hero-body">
+            <div class="container">
+                <h1 class="title">
+                    Project 1 Title
+                </h1>
+                <h2 class="subtitle">
+                    Proect 1 Subtitle
+                </h2>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="container">
+            <label for="inputArtist">Artist:</label>
+            <input id="inputArtist" type="text">
+            <button id="btnSearch">Search</button>
+            <div class="box">
+                <h1 id="artistName" class="title"></h1>
+                <img id="artistThumb" class="thumbnail" alt="thumbnail" width="100px">
+                <table class="table is-striped is-bordered">                    
+                    <tr>
+                        <th>Genre</th>
+                        <td id="artistGenre"></td>
+                    </tr>
+                    <tr>
+                        <th>Mood</th>
+                        <td id="artistMood"></td>
+                    </tr>
+                    <tr>
+                        <th>Formed</th>
+                        <td id="artistYear"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"><img id="artistLogo" alt="logo"></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="content has-text-centered">
+            <p>
+                <strong>Coming Soon: ATX Now</strong> by Josh, Kevin, and Z.
+            </p>
+        </div>
+    </footer>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="assets/js/script.js"></script>
+</body>
+
+</html>
