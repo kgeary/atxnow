@@ -1,2 +1,2 @@
-# whoisintown
-Who is in town? a site to help you figure out what to do
+# ATX Now
+A site to help you figure out what to do tonight in Austin, Texas.
