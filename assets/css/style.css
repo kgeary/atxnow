@@ -27,3 +27,15 @@ main {
     padding: 0.5rem;
     margin: 0.5rem 0;
 }
+
+.divider {
+    margin-top: 3rem;
+}
+
+@media only screen and (max-width: 670px) {
+    #artistTable th,
+    #artistTable td {
+        width: 100%;
+        display: block;
+    }
+}

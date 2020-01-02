@@ -271,12 +271,31 @@ function displayArtist(artist) {
     thumbEl.setAttribute("src", artist.thumbnail);
     thumbEl.setAttribute("alt", artist.name);
 
+    // Display the artist details table
+    displayArtistTable(artist);
+    
+    // Display the album discography list
+    displayAlbums(artist.albums);
+
+    // Display the top tracks
+    displayTracks(artist.tracks);
+
+    // Make sure the results window is showing
+    artistInfoEl.setAttribute("style", "display: initial;");
+    // Clear the loading status
+    labelStatusEl.textContent = "";
+}
+
+//=====================================================================
+// Update the HTML to display the artist details table
+//=====================================================================
+function displayArtistTable(artist) {
     // Configure Each parameter in the table
     artistParams.forEach(function (param) {
         let row = document.createElement("tr");
         let col1 = document.createElement("th");
-        let col2 = document.createElement("td");
         col1.textContent = param.description;
+        let col2 = document.createElement("td");
         if (param.isLink) {
             let anchor = document.createElement("a");
             anchor.setAttribute("href", "http://" + artist[param.field]);
@@ -301,17 +320,6 @@ function displayArtist(artist) {
     imgCol.appendChild(img);
     imgRow.appendChild(imgCol);
     artistTableEl.appendChild(imgRow);
-
-    // Display the album discography list
-    displayAlbums(artist.albums);
-
-    // Display the top tracks
-    displayTracks(artist.tracks);
-
-    // Make sure the results window is showing
-    artistInfoEl.setAttribute("style", "display: initial;");
-    // Clear the loading status
-    labelStatusEl.textContent = "";
 }
 
 //====================================================================
@@ -332,8 +340,14 @@ function displayAlbums(albums) {
 // Add the tracks to the HTML
 //====================================================================
 function displayTracks(tracks) {
-    topHeadEl.textContent = "Top " + tracks.length + " tracks";
     topListEl.innerHTML = "";
+
+    if (tracks.length === 0) {
+        topHeadEl.textContent = "Top Tracks Not Available";    
+        return;
+    }
+
+    topHeadEl.textContent = "Top " + tracks.length + " tracks";
     tracks.forEach(function (track) {
         let li = document.createElement("li");
         // Name
@@ -362,7 +376,7 @@ function getYouTube(src) {
     if (!src.includes("youtube.com/embed/")) {
         src = src.replace("www.youtube.com/", "www.youtube.com/embed/");
     }
-    return '<iframe width="560" height="315" src="' + src + '" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+    return '<iframe src="' + src + '" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
 }
 
 // ===================================================================
