@@ -22,6 +22,7 @@ const topListEl = document.getElementById("topList");
 const topHeadEl = document.getElementById("topHead");
 
 //=====================================================================
+// Dynamically create a table of Artist Information
 // All the fields in the html that should be updated
 // el - the element to update
 // type - src -or- txt.  src for image elements and txt to set content
@@ -36,21 +37,22 @@ const artistParams = [
     { description: "Formed", field: "formed"},
     { description: "Website", field: "website", isLink:true},
     { description: "Biography", field: "bio"},
-
 ];
 
-//=====================================================================
+///////////////////////////
 // Event Listeners
-//=====================================================================
+///////////////////////////
+
 //=====================================================================
 // Search Button Click Handler
 //=====================================================================
 btnSearchEl.addEventListener("click", function () {
     // Get the User location based on IP address from API
     getLocationData(function(loc){
-        alert(loc.city);
         console.table(loc);
+        // TODO - Do something with the location data
     });
+
     // Get and Escape the User Input for security
     let artist = escape(inputArtistEl.value);
     // Request the artist data from the API
@@ -75,20 +77,26 @@ inputArtistEl.addEventListener("keypress", function (event) {
     }
 });
 
+
+///////////////////////////
+// Helper Functions
+///////////////////////////
+
 //=====================================================================
 // Call the API to get the user location
 //=====================================================================
-function getLocationData(success, fail) {
-    const locationUrl = "https://freegeoip.app/json/";
+function getLocationData(success, fail) {    
+    const locationUrl = "https://json.geoiplookup.io/";
 
     axios.get(locationUrl)
         .then(function(response) {
             console.log("LOC RESP");
+            console.log(response);
             var locationData = {
-                city: response.city,
-                zip: response.zip_code,
-                lat: response.latitude,
-                lon: response.longitude,
+                city: response.data.city,
+                zip: response.data.postal_code,
+                lat: response.data.latitude,
+                lon: response.data.longitude,
             };
             success(locationData);
         })
@@ -362,13 +370,11 @@ function getYouTube(src) {
 // ===================================================================
 function onError(error) {
     console.log("An Error Occurred");
-    alert(error);
     labelStatusEl.textContent = "An Error Occurred - " + error.message;
     labelStatusEl.classList.add("is-danger");
 }
 
-// ===================================================================
-// MAIN
-// ===================================================================
-
+////////////////////////////////////
+// MAIN - Code that runs at startup
+////////////////////////////////////
 
