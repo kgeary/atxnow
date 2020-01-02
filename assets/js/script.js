@@ -13,6 +13,10 @@ const artistNameEl = document.getElementById("artistName");
 const logoEl = document.getElementById("artistLogo");
 const thumbEl = document.getElementById("artistThumb");
 
+// Events List
+const eventListEl = document.getElementById("eventList");
+const eventHeadEl = document.getElementById("eventHead");
+
 // Discography
 const discListEl = document.getElementById("discList");
 const discHeadEl = document.getElementById("discHead");
@@ -39,6 +43,10 @@ const artistParams = [
     { description: "Biography", field: "bio"},
 ];
 
+const sk = "jNVqoANxyxv3dO3F";
+
+let userLoc;
+
 //==============================================================================
 // Event Listeners
 //==============================================================================
@@ -48,9 +56,9 @@ const artistParams = [
 //=====================================================================
 btnSearchEl.addEventListener("click", function () {
     // Get the User location based on IP address from API
-    getLocationData(function(userLocation){
-        console.log("User Location");
+    getConcertData(function(userLocation){
         console.table(userLocation);
+        userLoc = userLocation;
         // TODO - Do something with the location data
     });
 
@@ -84,10 +92,16 @@ inputArtistEl.addEventListener("keypress", function (event) {
 //==============================================================================
 
 //=====================================================================
-// Call the API to get the user location
+// Call the API to get the get the concert Data
+// 1. Get the user location from IP
+// 2. Get the Metro ID's for the current location
 //=====================================================================
-function getLocationData(success, fail) {    
+function getConcertData(success, fail) {    
+    // 1. API REQUEST - Look up the User Location based off IP Address
     const locationUrl = "https://json.geoiplookup.io/";
+    let lat;
+    let lon;
+    let metro_areas = [];
 
     axios.get(locationUrl)
         .then(function(response) {
@@ -99,13 +113,78 @@ function getLocationData(success, fail) {
                 lat: response.data.latitude,
                 lon: response.data.longitude,
             };
-            success(locationData);
+            lat = locationData.lat;
+            lon = locationData.lon;
+            return locationData;
         })
+        .then (function (location) {
+            return axios.get(getMetroUrl(location));  
+        })
+        .then(function(response) {
+            // Parse Location Info
+            console.log("METRO AREAS RECEIVED!!!");
+            console.log(response);
+            metro_areas = parseMetroAreas(response);
+            return metro_areas;
+        }).then(function(areas) {
+            // Get an Array of Metro Areas to Query
+            let urls = getEventsUrlArray(areas);
+            let promises = [];
+            urls.forEach(function (url) {
+                promises.push(axios.get(url));
+            });       
+            return Promise.all(promises);
+        }).then(function (values) {
+            // Get an Array of Events in All the Metro Areas
+            let events = [];
+            values.forEach(function(response) {
+                // TODO Parse Metro Area Response Here
+                console.log(response);
+                events.push(...parseMetroEvents(response));
+            });
+            return events;
+        }).then(function(events) {
+            displayEvents(events);
+        })   
+        .then(function(response) {
+            if (success) success(response);
+        }) 
         .catch(function(error) {
-            console.log("Error Getting Location");
+            //======================================================
+            // ERROR ENCOUNTERED
+            //======================================================
+            console.log("Error Getting Data!!!!");
             console.log(error);
-            if (fail) fail("Unable to determine location");
+            if (fail) fail("Failed to get Concert Data");
         });
+}
+
+//=====================================================================
+// Returns URL to query Metro Areas for Events
+//=====================================================================
+function getEventsUrlArray(areas) {
+    let urls = [];
+    areas.forEach(function (area) {
+        urls.push("https://api.songkick.com/api/3.0/metro_areas/" + area.id + "/calendar.json?apikey=" + sk);
+    })
+    return urls;    
+}
+
+//=====================================================================
+// Returns URL to get a list of Metro Areas based on location
+//=====================================================================
+function getMetroUrl(location) {
+    // Get Location Info
+    let queryUrl = "https://api.songkick.com/api/3.0/search/locations.json?";
+                
+    if (location.lat && location.lon) {
+        // Use Latitude and Longitude if available
+        queryUrl += "location=geo:" + location.lat.toFixed(2) + "," + location.lon.toFixed(2) + "&apikey=" + sk;
+    } else {
+        // Use City Name
+        queryUrl += "query=" + location.city.replace(" ", "+") + "&apikey=" + sk;
+    }
+    return queryUrl;        
 }
 
 //=====================================================================
@@ -192,6 +271,47 @@ function getArtistData(artist, success, fail) {
 }
 
 //=====================================================
+// Parse the events for a Metro Area
+//=====================================================
+function parseMetroEvents(response) {
+    let respEvents = [];
+    let events = response.data.resultsPage.results.event;
+    if (!events) return respEvents;
+
+    events.forEach(function (event) {
+        respEvents.push({
+            name:       event.displayName,
+            type:       event.type,
+            uri:        event.uri,
+            startDate:  event.start.date,
+            startTime:  event.start.time, 
+            venue:      event.venue.displayName,
+            venuedId:   event.venue.id,
+        });
+    });
+    return respEvents;
+}
+//=====================================================
+// Parse the API response into an array of Metro Areas
+//=====================================================
+function parseMetroAreas(response) {
+    let areas = [];
+    let locations = response.data.resultsPage.results.location;
+    if (!locations) return areas;
+    
+    locations.forEach(function(location) {
+        areas.push({
+            id:         location.metroArea.id,
+            lat:        location.metroArea.lat,
+            lon:        location.metroArea.lng,
+            metroName:  location.metroArea.displayName,
+            cityName:   location.city.displayName
+        });
+    });
+    return areas;
+}
+
+//=====================================================
 // PARSE ARTIST
 //   Create an object with all the fields we care about
 //=====================================================
@@ -254,6 +374,37 @@ function parseTracks(topTracks) {
         });
     }
     return tracks;
+}
+
+//=====================================================================
+// Update the HTML to display the concert info
+//=====================================================================
+function displayEvents(events) {
+    eventHeadEl.textContent = events.length + " events in your area";
+    eventListEl.innerHTML = "";
+    
+    events.forEach(function(event) {
+        let div = document.createElement("div");
+        let p = document.createElement("p");
+        p.textContent = `
+            ${event.type}
+            ${event.name}
+            ${event.startDate} ${event.startTime}
+            ${event.venue}
+        `;
+        /*
+            name:       event.displayName,
+            type:       event.type,
+            uri:        event.uri,
+            startDate:  event.start.date,
+            startTime:  event.start.time, 
+            venue:      event.venue.displayName,
+            venuedId:   event.venue.id,
+        */
+
+        div.appendChild(p);
+        eventListEl.appendChild(div); 
+    });
 }
 
 //=====================================================================
@@ -394,4 +545,5 @@ function onError(error) {
 ////////////////////////////////////
 // MAIN - Code that runs at startup
 ////////////////////////////////////
-
+// Save the user location
+getConcertData();
