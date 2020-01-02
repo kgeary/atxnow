@@ -48,8 +48,9 @@ const artistParams = [
 //=====================================================================
 btnSearchEl.addEventListener("click", function () {
     // Get the User location based on IP address from API
-    getLocationData(function(loc){
-        console.table(loc);
+    getLocationData(function(userLocation){
+        console.log("User Location");
+        console.table(userLocation);
         // TODO - Do something with the location data
     });
 
@@ -342,7 +343,7 @@ function displayAlbums(albums) {
 function displayTracks(tracks) {
     topListEl.innerHTML = "";
 
-    if (tracks.length === 0) {
+    if (tracks.length < 1) {
         topHeadEl.textContent = "Top Tracks Not Available";    
         return;
     }
@@ -369,8 +370,7 @@ function displayTracks(tracks) {
 }
 
 //====================================================================
-// Return the html for a youtube
-//
+// Return the html for a youtube video
 //====================================================================
 function getYouTube(src) {
     if (!src.includes("youtube.com/embed/")) {

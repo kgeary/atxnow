@@ -13,8 +13,10 @@ main {
     margin-top: 3rem;
 }
 
-.table td {
-    width: 650px;
+#artistTable td {
+    /* width: 100%; */
+    max-height: 200px;
+    overflow: auto;
 }
 
 #artistThumb {
@@ -32,10 +34,30 @@ main {
     margin-top: 3rem;
 }
 
-@media only screen and (max-width: 670px) {
+iframe {
+    width: 500px;
+    height: 300px;
+}
+
+@media only screen and (max-width: 676px) {
     #artistTable th,
     #artistTable td {
+        /* Make sure the artist table stacks vertically on smaller screens */
         width: 100%;
         display: block;
+        max-height: 200px;
+    }
+
+    #artistTable th {
+        background-color: #444;
+        color: whitesmoke;
+    }
+
+    #artistTable td {
+        margin-bottom: 1rem;
+    }
+
+    iframe {
+        width: 100%;
     }
 }
