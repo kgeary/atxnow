@@ -1,6 +1,6 @@
-//=====================================================================
-// Find HTML Elements
-//=====================================================================
+//==============================================================================
+// Global Variables
+//==============================================================================
 // Containers
 const artistInfoEl = document.getElementById("artistInfo");
 // Artist Search
@@ -39,9 +39,9 @@ const artistParams = [
     { description: "Biography", field: "bio"},
 ];
 
-///////////////////////////
+//==============================================================================
 // Event Listeners
-///////////////////////////
+//==============================================================================
 
 //=====================================================================
 // Search Button Click Handler
@@ -68,7 +68,7 @@ btnSearchEl.addEventListener("click", function () {
 });
 
 //=====================================================================
-// Artist Input KeyPress Event (Watch for enter)
+// Artist Search Input KeyPress Event (Watch for enter)
 //=====================================================================
 inputArtistEl.addEventListener("keypress", function (event) {
     // If the Keypressed was 13 (Enter) then trigger a Button Search Click Event
@@ -78,9 +78,9 @@ inputArtistEl.addEventListener("keypress", function (event) {
 });
 
 
-///////////////////////////
+//==============================================================================
 // Helper Functions
-///////////////////////////
+//==============================================================================
 
 //=====================================================================
 // Call the API to get the user location
@@ -303,7 +303,7 @@ function displayArtist(artist) {
     artistTableEl.appendChild(imgRow);
 
     // Display the album discography list
-    displayDiscography(artist.albums);
+    displayAlbums(artist.albums);
 
     // Display the top tracks
     displayTracks(artist.tracks);
@@ -315,9 +315,9 @@ function displayArtist(artist) {
 }
 
 //====================================================================
-// Add the discography to the HTML
+// Add the Album list to the HTML
 //====================================================================
-function displayDiscography(albums) {
+function displayAlbums(albums) {
     discHeadEl.textContent = "Last " + albums.length + " Albums";
     discListEl.innerHTML = ""; // Clear out the old list
     albums.forEach(function (album) {
@@ -354,10 +354,13 @@ function displayTracks(tracks) {
     });
 }
 
-// Return the html for a youtube 
+//====================================================================
+// Return the html for a youtube
+//
+//====================================================================
 function getYouTube(src) {
     if (!src.includes("youtube.com/embed/")) {
-        src = src.replace("www.youtube.com/", "www.youtube.com/embed/"); 
+        src = src.replace("www.youtube.com/", "www.youtube.com/embed/");
     }
     return '<iframe width="560" height="315" src="' + src + '" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
 }

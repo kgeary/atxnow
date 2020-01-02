@@ -27,60 +27,62 @@
     </section>
 
     <!-- Artist Search -->
-    <section class="section is-paddingless">
-        <div class="container">
-            <!-- SEARCH FIELD -->
-            <div class="field has-addons has-addons-centered">
-                <p class="control">
-                    <input id="inputArtist" class="input" type="text" placeholder="Search for Artists">
-                </p>
-                <p class="control">
-                    <button id="btnSearch" class="button is-success">
-                        Search
-                    </button>
-                </p>
+    <main>
+        <section class="section is-paddingless">
+            <div class="container">
+                <!-- SEARCH FIELD -->
+                <div class="field has-addons has-addons-centered">
+                    <p class="control">
+                        <input id="inputArtist" class="input" type="text" placeholder="Search for Artists">
+                    </p>
+                    <p class="control">
+                        <button id="btnSearch" class="button is-success">
+                            Search
+                        </button>
+                    </p>
+                </div>
+                <!-- Status -->
+                <p id="labelStatus" class="has-text-centered help"></p>
             </div>
-            <!-- Status -->
-            <p id="labelStatus" class="has-text-centered help"></p>
-        </div>
-    </section>
+        </section>
 
-    <!-- Artist Info Box -->
-    <section class="section">
-        <div class="container">
-            <div id="artistInfo" class="has-text-centered media">
-                <div class="columns">
-                    <div class="column is-8">
-                        <!-- Artist Info -->
-                        <h1 id="artistName" class="title"></h1>
-                        <table class="table">
-                            <tbody id="artistTable"></tbody>
-                        </table>
+        <!-- Artist Info Box -->
+        <section class="section">
+            <div class="container">
+                <div id="artistInfo" class="has-text-centered media">
+                    <div class="columns">
+                        <div class="column is-8">
+                            <!-- Artist Info -->
+                            <h1 id="artistName" class="title"></h1>
+                            <table class="table">
+                                <tbody id="artistTable"></tbody>
+                            </table>
+                        </div>
+                        <div class="column is-4">
+                            <!-- Artist Image -->
+                            <div class="image">
+                                <img id="artistThumb" alt="Artist Image">
+                            </div>
+                        </div>
                     </div>
-                    <div class="column is-4">
-                        <!-- Artist Image -->
-                        <div class="image">
-                            <img id="artistThumb" alt="Artist Image">
+                    <!-- Discography Here -->
+                    <div id="discBox" class="content is-outlined has-text-left">
+                        <h1 id="discHead" class="title is-4"></h1>
+                        <div class="tile is-ancestor">
+                            <ul id="discList" class="tile is-parent is-vertical"></ul>
+                        </div>
+                    </div>
+                    <!-- Top Tracks Here -->
+                    <div id="topBox" class="content is-outlined has-text-left">
+                        <h1 id="topHead" class="title is-4"></h1>
+                        <div class="tile is-ancestor">
+                            <ul id="topList" class="tile is-parent is-vertical"></ul>
                         </div>
                     </div>
                 </div>
-                <!-- Discography Here -->
-                <div id="discBox" class="content is-outlined has-text-left">
-                    <h1 id="discHead" class="title is-4"></h1>
-                    <div class="tile is-ancestor">
-                        <ul id="discList" class="tile is-parent is-vertical"></ul>
-                    </div>
-                </div>
-                <!-- Top Tracks Here -->
-                <div id="topBox" class="content is-outlined has-text-left">
-                    <h1 id="topHead" class="title is-4"></h1>
-                    <div class="tile is-ancestor">
-                        <ul id="topList" class="tile is-parent is-vertical"></ul>
-                    </div>
-                </div>
             </div>
-        </div>
-    </section>
+        </section>
+    </main>
 
     <footer class="footer">
         <div class="content has-text-centered">
