@@ -13,40 +13,9 @@
 </head>
 
 <body>
-    <nav class="level">
-        <!-- Left side -->
-        <div class="level-left">
-            <div class="level-item">
-                <p class="subtitle is-5">
-                    <strong>123</strong> posts
-                </p>
-            </div>
-            <div class="level-item">
-                <div class="field has-addons">
-                    <p class="control">
-                        <input class="input" type="text" placeholder="Find a post">
-                    </p>
-                    <p class="control">
-                        <button class="button is-success">
-                            Search
-                        </button>
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Right side -->
-        <div class="level-right">
-            <p class="level-item"><strong>All</strong></p>
-            <p class="level-item"><a>Published</a></p>
-            <p class="level-item"><a>Drafts</a></p>
-            <p class="level-item"><a>Deleted</a></p>
-            <p class="level-item"><a class="button is-success">New</a></p>
-        </div>
-    </nav>
     <section class="hero">
         <div class="hero-body">
-            <div class="container">
+            <div class="container has-text-centered">
                 <h1 class="title">
                     ATX Now
                 </h1>
@@ -60,7 +29,7 @@
     <section class="section">
         <div class="container">
             <!-- Artist Search -->
-            <div class="field has-addons">
+            <div class="field has-addons has-addons-centered">
                 <p class="control">
                     <input id="inputArtist" class="input" type="text" placeholder="Search for Artists">
                 </p>
@@ -70,36 +39,41 @@
                     </button>
                 </p>
             </div>
+            <!-- Status -->
+            <p id="labelStatus" class="has-text-centered help"></p>
 
             <!-- Artist Info Box -->
-            <div class="box">
+            <div id="artistInfo" class="has-text-centered">
+                <!-- Artist Info -->
                 <h1 id="artistName" class="title"></h1>
                 <div class="level">
-                    <div class="level-left">
-                        <table class="table is-striped is-bordered level-item">
-                            <tr>
-                                <th>Genre</th>
-                                <td id="artistGenre"></td>
-                            </tr>
-                            <tr>
-                                <th>Mood</th>
-                                <td id="artistMood"></td>
-                            </tr>
-                            <tr>
-                                <th>Formed</th>
-                                <td id="artistYear"></td>
-                            </tr>
-                            <tr>
-                                <td colspan="2"><img id="artistLogo" alt="logo"></td>
-                            </tr>
-                        </table>
-                        <img id="artistThumb" class="level-item" alt="thumbnail" width="300px">
+                    <table class="table is-striped is-bordered level-item">
+                        <tr>
+                            <th>Genre</th>
+                            <td id="artistGenre"></td>
+                        </tr>
+                        <tr>
+                            <th>Mood</th>
+                            <td id="artistMood"></td>
+                        </tr>
+                        <tr>
+                            <th>Formed</th>
+                            <td id="artistYear"></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"><img id="artistLogo" alt="logo"></td>
+                        </tr>
+                    </table>
+                    <img id="artistThumb" class="level-item" alt="thumbnail" width="300px">
+                </div>
+
+                <!-- Discography Here -->
+                <div class="box">
+                    <h1 id="headDisc" class="subtitle"></h1>
+                    <div class="tile is-ancestor">
+                        <ul id="listDisc" class="tile is-parent is-vertical"></ul>
                     </div>
                 </div>
-                
-                <!-- Discography Here -->
-                <ul id="listDisc" class="list">
-                </ul>
 
             </div>
         </div>

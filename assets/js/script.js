@@ -1,14 +1,22 @@
 //=====================================================================
 // Find HTML Elements
 //=====================================================================
+// Containers
+const artistInfoEl = document.getElementById("artistInfo");
+// Artist Search
 const btnSearchEl = document.getElementById("btnSearch");
 const inputArtistEl = document.getElementById("inputArtist");
+const labelStatusEl = document.getElementById("labelStatus");
+// Artist Info
 const logoEl = document.getElementById("artistLogo");
 const thumbEl = document.getElementById("artistThumb");
 const nameEl = document.getElementById("artistName");
 const formedEl = document.getElementById("artistYear");
 const genreEl = document.getElementById("artistGenre");
 const moodEl = document.getElementById("artistMood");
+// Discography
+const listDiscEl = document.getElementById("listDisc");
+const headDiscEl = document.getElementById("headDisc");
 
 //=====================================================================
 // All the fields in the html that should be updated
@@ -25,13 +33,35 @@ const artistParams = [
 ];
 
 //=====================================================================
+// Event Listeners
+//=====================================================================
+//=====================================================================
 // Search Button Click Handler
 //=====================================================================
 btnSearchEl.addEventListener("click", function () {
+    // Get the User Input
     let artist = inputArtistEl.value;
+    // Request the data from the API
     getArtistData(artist, displayArtists);
+    // Set the Status Label class to include is-danger to give red text
+    labelStatusEl.classList.remove("is-danger");
+    // Update the Status Label to indicate we are loading
+    labelStatusEl.textContent = "Loading...";
+    // Hide the old info
+    artistInfoEl.setAttribute("style", "display: none;");
+    // Clear the input
+    inputArtistEl.value = "";
 });
 
+//=====================================================================
+// Artist Input KeyPress Event (Watch for enter)
+//=====================================================================
+inputArtistEl.addEventListener("keypress", function (event) {
+    // If the Keypressed was 13 (Enter) then trigger a Button Search Click Event
+    if (event.which === 13) {
+        btnSearchEl.click();
+    }
+});
 
 //=====================================================================
 // Call the APIs to get the artist Data
@@ -128,11 +158,26 @@ function getArtistData(artist, success, fail) {
             // Call the user defined fail function if it exists
             //=====================================================
             console.log("<<< ERROR >>>");
-            console.log(error.message);
-            console.log(error);
+            if (error) {
+                console.log("Error Received");
+                console.log(error);
+                labelStatusEl.classList.add("is-danger");
+                if (error.message) {
+                    labelStatusEl.textContent = error.message;    
+                } else {
+                    labelStatusEl.textContent = "An error occurred. please try again"; 
+                }
+            }
 
             // If it exists, call the user specified fail callback
-            if (fail) fail(error);
+            if (fail) {
+                console.log("Passing error to user fail function");
+                fail(error);
+            } else {
+                //console.log("No Fail Function defined. Throwing...");
+                //throw error;
+            }
+
         });
 }
 
@@ -165,33 +210,41 @@ function displayArtists(artist) {
 
     // Update the album discography list
     updateDiscography(artist.albums);
+
+    // Make sure the results window is showing
+    artistInfoEl.setAttribute("style", "display: initial;");
+    // Clear the loading status
+    labelStatusEl.textContent = "";
 }
 
 //====================================================================
 // Add the discography to the HTML
 //====================================================================
 function updateDiscography(albums) {
-    let listDiscEl = document.getElementById("listDisc");
+    headDiscEl.textContent = "Displaying last " + albums.length + " Albums";
     listDiscEl.innerHTML = ""; // Clear out the old list
-    albums.forEach(function(album) {
+    albums.forEach(function (album) {
         let li = document.createElement("li");
-        li.textContent = album.name + "(" + album.year + ")";
+        li.textContent = album.name + " (" + album.year + ")";
+        li.setAttribute("class", "tile is-child");
         listDiscEl.appendChild(li);
     });
 }
 
 // ===================================================================
 // AJAX Error Handler
-//  TODO - Change this to update the page as needed.
+//   This will be called instead of our success handler if any of the
+//   api requests fail.
+//   1. Update the status label to indicate we have an error 
 // ===================================================================
 function onError(error) {
     console.log("An Error Occurred");
+    labelStatusEl.textContent = "An Error Occurred - " + error.message;
+    labelStatusEl.classList.add("is-danger");
 }
 
 // ===================================================================
 // MAIN
 // ===================================================================
-let artist = "Grateful Dead";
-getArtistData(artist, displayArtists, onError);
 
 
