@@ -46,9 +46,14 @@ const artistParams = [
 // Search Button Click Handler
 //=====================================================================
 btnSearchEl.addEventListener("click", function () {
-    // Get the User Input
+    // Get the User location based on IP address from API
+    getLocationData(function(loc){
+        alert(loc.city);
+        console.table(loc);
+    });
+    // Get and Escape the User Input for security
     let artist = escape(inputArtistEl.value);
-    // Request the data from the API
+    // Request the artist data from the API
     getArtistData(artist, displayArtist);
     // Set the Status Label class to include is-danger to give red text
     labelStatusEl.classList.remove("is-danger");
@@ -69,6 +74,30 @@ inputArtistEl.addEventListener("keypress", function (event) {
         btnSearchEl.click();
     }
 });
+
+//=====================================================================
+// Call the API to get the user location
+//=====================================================================
+function getLocationData(success, fail) {
+    const locationUrl = "https://freegeoip.app/json/";
+
+    axios.get(locationUrl)
+        .then(function(response) {
+            console.log("LOC RESP");
+            var locationData = {
+                city: response.city,
+                zip: response.zip_code,
+                lat: response.latitude,
+                lon: response.longitude,
+            };
+            success(locationData);
+        })
+        .catch(function(error) {
+            console.log("Error Getting Location");
+            console.log(error);
+            if (fail) fail("Unable to determine location");
+        });
+}
 
 //=====================================================================
 // Call the APIs to get the artist Data
