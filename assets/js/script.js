@@ -8,15 +8,18 @@ const btnSearchEl = document.getElementById("btnSearch");
 const inputArtistEl = document.getElementById("inputArtist");
 const labelStatusEl = document.getElementById("labelStatus");
 // Artist Info
+const artistTableEl = document.getElementById("artistTable");
+const artistNameEl = document.getElementById("artistName");
 const logoEl = document.getElementById("artistLogo");
 const thumbEl = document.getElementById("artistThumb");
-const nameEl = document.getElementById("artistName");
-const formedEl = document.getElementById("artistYear");
-const genreEl = document.getElementById("artistGenre");
-const moodEl = document.getElementById("artistMood");
+
 // Discography
-const listDiscEl = document.getElementById("listDisc");
-const headDiscEl = document.getElementById("headDisc");
+const discListEl = document.getElementById("discList");
+const discHeadEl = document.getElementById("discHead");
+
+// Top Tracks
+const topListEl = document.getElementById("topList");
+const topHeadEl = document.getElementById("topHead");
 
 //=====================================================================
 // All the fields in the html that should be updated
@@ -25,11 +28,15 @@ const headDiscEl = document.getElementById("headDisc");
 // field - the name of the field within the artist object
 //=====================================================================
 const artistParams = [
-    { el: logoEl, type: "src", field: "logo" },
-    { el: thumbEl, type: "src", field: "thumbnail" },
-    { el: nameEl, type: "text", field: "name" },
-    { el: genreEl, type: "text", field: "genre" },
-    { el: moodEl, type: "text", field: "mood" },
+    { description: "Name", field: "name" },
+    { description: "From", field: "origin"},
+    { description: "Genre", field: "genre" },
+    { description: "Mood", field: "mood" },
+    { description: "Style", field: "style"},
+    { description: "Formed", field: "formed"},
+    { description: "Website", field: "website", isLink:true},
+    { description: "Biography", field: "bio"},
+
 ];
 
 //=====================================================================
@@ -40,9 +47,9 @@ const artistParams = [
 //=====================================================================
 btnSearchEl.addEventListener("click", function () {
     // Get the User Input
-    let artist = inputArtistEl.value;
+    let artist = escape(inputArtistEl.value);
     // Request the data from the API
-    getArtistData(artist, displayArtists);
+    getArtistData(artist, displayArtist);
     // Set the Status Label class to include is-danger to give red text
     labelStatusEl.classList.remove("is-danger");
     // Update the Status Label to indicate we are loading
@@ -76,18 +83,20 @@ function getArtistData(artist, success, fail) {
     const base = "https://www.theaudiodb.com/api/v1/json/1";
     const artistUrl = base + "/search.php?s=" + artist;
     const discographyUrl = base + "/discography.php?s=" + artist;
+    const topUrl = base + "/track-top10.php?s=" + artist;
 
-    // Use Promise.all to run all get requests in parallel 
+    // Use Promise.all to run all get requests in parallel
     // 1. Get the Artist Info 
     // 2. Get the Artist Discography
     Promise.all([
         axios.get(artistUrl),
-        axios.get(discographyUrl)
+        axios.get(discographyUrl),
+        axios.get(topUrl),
     ])
         .then(function (responses) {
             // ONCE All Requests have been successfully resolved...   
             // Unpack the individual reponse values from the responses array 
-            let [artistResponse, discResponse] = responses;
+            let [artistResponse, discResponse, topResponse] = responses;
 
             //=====================================================
             // DEBUGGING - Print the Response Objects
@@ -95,59 +104,21 @@ function getArtistData(artist, success, fail) {
             console.log("=== All API Calls Good! ===");
             console.log(artistResponse);
             console.log(discResponse);
+            console.log(topResponse);
 
             //=====================================================
-            // If artist was not found throw an error for catch
+            // API Was successful but no artists found
+            // throw an error to be caught below
             //=====================================================
             if (!artistResponse.data.artists) {
                 throw new Error("No Artists Found!");
             }
 
-            //=====================================================
-            // PARSE ARTIST
-            //   Create an object with all the fields we care about
-            //=====================================================
-            let artistData = artistResponse.data.artists[0];
-            let artist = {
-                id: artistData.idArtist,
-                musicBrainzId: artistData.strMusicBrainzID,
-                bio: artistData.strBiographyEN,
-                formed: artistData.intFormedYear,
-                genre: artistData.strGenre,
-                logo: artistData.strArtistLogo,
-                mood: artistData.strMood,
-                name: artistData.strArtist,
-                origin: artistData.strCountry,
-                style: artistData.strStyle,
-                thumbnail: artistData.strArtistThumb,
-                website: artistData.strWebsite,
-            };
-
-            //=====================================================
-            // PARSE ALBUMS
-            //   Create an empty array and push a new album 
-            //   object for each iteration
-            //=====================================================
-            let albums = []; // Create an Empty Albums Array
-            let responseAlbums = discResponse.data.album; // Create a variable to hold the album response list
-
-            // For Each Album in the result list...
-            //   1. parse the response data into a new album object
-            //   2. push the new album object on to the back of the albums array
-            responseAlbums.forEach(function (album) {
-                albums.push({
-                    name: album.strAlbum,
-                    year: album.intYearReleased,
-                });
-            });
-
-            // DEBUG
-            console.table(artist);
-            console.table(albums);
-
-            // Create an albums parameter within the artist object
-            artist.albums = albums;
-
+            // Parse the data we need into objects;
+            let artist = parseArtist(artistResponse.data.artists[0]);
+            artist.albums = parseAlbums(discResponse.data.album);
+            artist.tracks = parseTracks(topResponse.data.track);
+    
             // Return the Artist Object to the user provided success handler
             success(artist);
         })
@@ -157,7 +128,7 @@ function getArtistData(artist, success, fail) {
             // IF any of the API Calls fail we end up here
             // Call the user defined fail function if it exists
             //=====================================================
-            console.log("<<< ERROR >>>");
+            console.log("!!! ERROR !!!");
             if (error) {
                 console.log("Error Received");
                 console.log(error);
@@ -167,49 +138,138 @@ function getArtistData(artist, success, fail) {
                 } else {
                     labelStatusEl.textContent = "An error occurred. please try again"; 
                 }
+            } else {
+                console.log("Unknown Error");
+                console.log(error);
             }
 
+            //======================================================
             // If it exists, call the user specified fail callback
+            //======================================================
             if (fail) {
                 console.log("Passing error to user fail function");
                 fail(error);
-            } else {
-                //console.log("No Fail Function defined. Throwing...");
-                //throw error;
             }
-
         });
+}
+
+//=====================================================
+// PARSE ARTIST
+//   Create an object with all the fields we care about
+//=====================================================
+function parseArtist(artistData) {
+    return artist = {
+        id: artistData.idArtist,
+        //musicBrainzId: artistData.strMusicBrainzID,
+        bio: artistData.strBiographyEN,
+        formed: artistData.intFormedYear,
+        genre: artistData.strGenre,
+        logo: artistData.strArtistLogo,
+        mood: artistData.strMood,
+        name: artistData.strArtist,
+        origin: artistData.strCountry,
+        style: artistData.strStyle,
+        thumbnail: artistData.strArtistThumb,
+        website: artistData.strWebsite,
+    };
+}
+
+//=====================================================
+// PARSE ALBUMS
+//   Create an empty array and push a new album 
+//   object for each iteration
+//=====================================================
+function parseAlbums(responseAlbums) {
+    let albums = []; // Create an Empty Albums Array
+
+    // For Each Album in the result list...
+    //   1. parse the response data into a new album object
+    //   2. push the new album object on to the back of the albums array
+    if (responseAlbums) {
+        responseAlbums.forEach(function (album) {
+            albums.push({
+                name: album.strAlbum,
+                year: album.intYearReleased,
+            });
+        });    
+    }
+    return albums;
+}
+
+//======================================================
+// PARSE TOP TRACKS
+//======================================================
+function parseTracks(topTracks) {
+    let tracks = [];
+
+    // For Each Track in the result list...
+    //   1. parse the response data into a new track object
+    //   2. push the new track object on to the back of the tracks array
+    if (topTracks) {
+        topTracks.forEach(function (track) {
+            tracks.push({
+                name: track.strTrack,
+                artist: track.strArtist,
+                album: track.strAlbum,
+                video: track.strMusicVid,
+            });
+        });
+    }
+    return tracks;
 }
 
 //=====================================================================
 // Update the HTML to display the artist info
 //=====================================================================
-function displayArtists(artist) {
+function displayArtist(artist) {
     console.log("Displaying Artist");
 
-    // Configure Each parameter in the list
+    // Clear Out the old table
+    artistTableEl.innerHTML = "";
+
+    // Set the Artist Name
+    artistNameEl.textContent = artist.name;
+
+    // Set the thumbnail Image for the artist
+    thumbEl.setAttribute("src", artist.thumbnail);
+    thumbEl.setAttribute("alt", artist.name);
+
+    // Configure Each parameter in the table
     artistParams.forEach(function (param) {
-        if (param.type === "src") {
-            param.el.setAttribute("src", artist[param.field]);
-        } else if (param.type === "text") {
-            param.el.textContent = artist[param.field];
+        let row = document.createElement("tr");
+        let col1 = document.createElement("th");
+        let col2 = document.createElement("td");
+        col1.textContent = param.description;
+        if (param.isLink) {
+            let anchor = document.createElement("a");
+            anchor.setAttribute("href", "http://" + artist[param.field]);
+            anchor.setAttribute("target", "_blank");
+            anchor.textContent = artist[param.field];
+            col2.appendChild(anchor);
         } else {
-            throw new Error("Unknown Param Type " + param.type)
+            col2.textContent = artist[param.field];
         }
+        row.appendChild(col1);
+        row.appendChild(col2);
+        artistTableEl.appendChild(row);
     });
 
-    // Set the src for image fields
-    logoEl.setAttribute("src", artist.logo);
-    thumbEl.setAttribute("src", artist.thumbnail);
+    // Append the Logo as the last row of the table
+    let imgRow = document.createElement("tr");
+    let imgCol = document.createElement("td");
+    imgCol.setAttribute("colspan", "2");
+    let img = document.createElement("img");
+    img.setAttribute("src", artist.logo);
+    img.setAttribute("alt", artist.name + " logo");
+    imgCol.appendChild(img);
+    imgRow.appendChild(imgCol);
+    artistTableEl.appendChild(imgRow);
 
-    // Set the textContent for string fields
-    nameEl.textContent = artist.name;
-    formedEl.textContent = artist.formed;
-    genreEl.textContent = artist.genre;
-    moodEl.textContent = artist.mood;
+    // Display the album discography list
+    displayDiscography(artist.albums);
 
-    // Update the album discography list
-    updateDiscography(artist.albums);
+    // Display the top tracks
+    displayTracks(artist.tracks);
 
     // Make sure the results window is showing
     artistInfoEl.setAttribute("style", "display: initial;");
@@ -220,15 +280,49 @@ function displayArtists(artist) {
 //====================================================================
 // Add the discography to the HTML
 //====================================================================
-function updateDiscography(albums) {
-    headDiscEl.textContent = "Displaying last " + albums.length + " Albums";
-    listDiscEl.innerHTML = ""; // Clear out the old list
+function displayDiscography(albums) {
+    discHeadEl.textContent = "Last " + albums.length + " Albums";
+    discListEl.innerHTML = ""; // Clear out the old list
     albums.forEach(function (album) {
         let li = document.createElement("li");
         li.textContent = album.name + " (" + album.year + ")";
         li.setAttribute("class", "tile is-child");
-        listDiscEl.appendChild(li);
+        discListEl.appendChild(li);
     });
+}
+
+//====================================================================
+// Add the tracks to the HTML
+//====================================================================
+function displayTracks(tracks) {
+    topHeadEl.textContent = "Top " + tracks.length + " tracks";
+    topListEl.innerHTML = "";
+    tracks.forEach(function (track) {
+        let li = document.createElement("li");
+        // Name
+        let pName = document.createElement("h3");
+        pName.textContent = track.name;
+        // Album
+        let pAlbum = document.createElement("h5");
+        pAlbum.textContent = track.album;
+        // Youtube Link
+        let video = document.createElement("div");
+        video.innerHTML = getYouTube(track.video);
+
+        li.appendChild(pName);
+        li.appendChild(pAlbum);
+        li.appendChild(video);
+        li.setAttribute("class", "tile is-child");
+        topListEl.appendChild(li);
+    });
+}
+
+// Return the html for a youtube 
+function getYouTube(src) {
+    if (!src.includes("youtube.com/embed/")) {
+        src = src.replace("www.youtube.com/", "www.youtube.com/embed/"); 
+    }
+    return '<iframe width="560" height="315" src="' + src + '" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
 }
 
 // ===================================================================
@@ -239,6 +333,7 @@ function updateDiscography(albums) {
 // ===================================================================
 function onError(error) {
     console.log("An Error Occurred");
+    alert(error);
     labelStatusEl.textContent = "An Error Occurred - " + error.message;
     labelStatusEl.classList.add("is-danger");
 }
