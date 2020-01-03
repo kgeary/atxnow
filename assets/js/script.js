@@ -1,5 +1,13 @@
 //==============================================================================
-// Global Variables
+// CONSTANTS
+//==============================================================================
+const RESULT_LIMIT = 50;
+const MAX_METROS = 20;
+const MAX_DISPLAY_RESULTS = 25;
+const DAYS_CURRENT = 7; // How many days to show for current happenings
+
+//==============================================================================
+// HTML Elements
 //==============================================================================
 // Containers
 const artistInfoEl = document.getElementById("artistInfo");
@@ -116,7 +124,7 @@ function getArtistEvents(artist, days) {
 // 3. Get the Events upcoming at each of the Metro ID's.
 // days = number of days out to get events.  leave undefined for no max
 //=====================================================================
-function getAreaEvents(days) {    
+function getAreaEvents(days=DAYS_CURRENT) {    
     // 1. API REQUEST - Look up the User Location based off IP Address
     const locationUrl = "https://json.geoiplookup.io/";
     let lat;
@@ -126,7 +134,7 @@ function getAreaEvents(days) {
 
     axios.get(locationUrl)
         .then(function(response) {
-            //console.log("LOC RESP");
+            //console.log("LOCATION RESPONSE RECEIVED");
             //console.log(response);
             var locationData = {
                 city: response.data.city,
@@ -166,7 +174,7 @@ function getAreaEvents(days) {
             });
             return events;
         }).then(function(events) {
-            displayEvents(events, "events in " + city, 20);
+            displayEvents(events, "events in " + city);
         })   
         .catch(function(error) {
             //======================================================
@@ -320,12 +328,14 @@ function parseEvents(response) {
 //=====================================================
 // Parse the API response into an array of Metro Areas
 //=====================================================
-function parseMetroAreas(response) {
+function parseMetroAreas(response, limit=MAX_METROS) {
     let areas = [];
     let locations = response.data.resultsPage.results.location;
     if (!locations) return areas;
     
+    let index = 0;
     locations.forEach(function(location) {
+        if (index++ >= limit) return;
         areas.push({
             id:         location.metroArea.id,
             lat:        location.metroArea.lat,
@@ -333,8 +343,9 @@ function parseMetroAreas(response) {
             metroName:  location.metroArea.displayName,
             cityName:   location.city.displayName
         });
-        console.log("METRO = ", location.metroArea.displayName, "-", location.city.displayName);
+        //console.log("METRO = ", location.metroArea.displayName, "-", location.city.displayName);
     });
+    console.table(areas);
     return areas;
 }
 
@@ -406,7 +417,7 @@ function parseTracks(topTracks) {
 //=====================================================================
 // Update the HTML to display event info
 //=====================================================================
-function displayEvents(events, str, limit=50) {
+function displayEvents(events, str, limit=MAX_DISPLAY_RESULTS) {
     let displayStr = (limit < events.length) ? limit + " of " : "";
     displayStr += events.length + " " + str;
 
@@ -543,7 +554,7 @@ function displayAlbums(albums) {
 }
 
 //====================================================================
-// Add the tracks to the HTML
+// Add the top tracks list to the HTML
 //====================================================================
 function displayTracks(tracks) {
     topListEl.innerHTML = "";
@@ -575,7 +586,7 @@ function displayTracks(tracks) {
 }
 
 //====================================================================
-// Return the html for a youtube video
+// Return the iframe html for a youtube video
 //====================================================================
 function getYouTube(src) {
     if (!src) {
@@ -614,4 +625,4 @@ function onError(error) {
 ////////////////////////////////////
 
 // Get Concert Data for the current location
-getAreaEvents(1);
+getAreaEvents();
