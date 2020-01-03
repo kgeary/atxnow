@@ -14,10 +14,12 @@ const MAX_DISTANCE_LOCAL = 30;
 //==============================================================================
 // Containers
 const artistInfoEl = document.getElementById("artistInfo");
+
 // Artist Search
 const btnSearchEl = document.getElementById("btnSearch");
 const inputArtistEl = document.getElementById("inputArtist");
 const labelStatusEl = document.getElementById("labelStatus");
+
 // Artist Info
 const artistTableEl = document.getElementById("artistTable");
 const artistNameEl = document.getElementById("artistName");
@@ -38,7 +40,7 @@ const topHeadEl = document.getElementById("topHead");
 
 //=====================================================================
 // Dynamically create a table of Artist Information
-// All the fields in the html that should be updated
+// List all the fields in the html that should be included
 // description - Table heading cell text
 // field - Name of the field in artist object
 //=====================================================================
@@ -72,8 +74,12 @@ btnSearchEl.addEventListener("click", function () {
     // Hide the old info
     // Clear the input
     eventListEl.innerHTML = "";
-    let artist = escape(inputArtistEl.value);
-    getArtistData(artist, displayArtist);
+    let artist = escape(inputArtistEl.value.trim());
+    if (artist === "") {
+        getAreaEvents(7);
+    } else {
+        getArtistData(artist, displayArtist);
+    }
     labelStatusEl.classList.remove("is-danger");
     labelStatusEl.textContent = "Loading...";
     artistInfoEl.setAttribute("style", "display: none;");
@@ -98,10 +104,11 @@ inputArtistEl.addEventListener("keypress", function (event) {
 //=====================================================================
 // Get Artist Events
 //  Call the API to get Artist Event Data for a given artist
-//  artist = artist to get info for
+//  artist = artist object
 //  days = number of days to search. undefined = no max date
+//  page = the results page to get retrieve
 //=====================================================================
-function getArtistEvents(artist, days, page = 1) {
+function getArtistEvents(artist, days = DAYS_ARTIST, page = 1) {
     let artistUrl = "https://api.songkick.com/api/3.0/artists/mbid:";
     artistUrl += artist.mbid;
     artistUrl += "/calendar.json?apikey=" + sk + getDateQuery(days) + getPageQuery(page, MAX_QUERY_RESULTS);
@@ -119,6 +126,18 @@ function getArtistEvents(artist, days, page = 1) {
 }
 
 //=====================================================================
+// Call the API to get the current location
+//=====================================================================
+function getLocationPromise() {
+    const locationUrl = "https://json.geoiplookup.io/";
+    return axios.get(locationUrl)
+        .then(function (response) {
+            userLocation = parseLocation(response);
+            return userLocation;
+        });
+}
+
+//=====================================================================
 // Call the API to get concert Data in the area
 // 1. Get the user location from IP
 // 2. Get the Metro ID's for the current location
@@ -127,25 +146,18 @@ function getArtistEvents(artist, days, page = 1) {
 //=====================================================================
 function getAreaEvents(days = DAYS_CURRENT) {
     // 1. API REQUEST - Look up the User Location based off IP Address
-    const locationUrl = "https://json.geoiplookup.io/";
-    let metro_areas = [];
+    // 2. API REQUEST - Find Metro Areas based off Location Data
+    // 3. API REQUEST - Request Event Info from Each Metro Area
 
-    axios.get(locationUrl)
-        .then(function (response) {
-            //console.log("LOCATION RESPONSE RECEIVED");
-            //console.log(response);
-            userLocation = parseLocation(response);
-            // Store the l
-            return userLocation;
-        })
+
+    getLocationPromise()
         .then(function (locationData) {
             // Find Metro Areas based off the location
             return axios.get(buildMetroUrl(locationData));
         })
         .then(function (response) {
             // Parse Metro Areas
-            //console.log("METRO AREAS RECEIVED!!!");
-            //console.log(response);
+            //console.log("METRO", response);
             metro_areas = parseMetroAreas(response);
             return metro_areas;
         }).then(function (areas) {
@@ -157,13 +169,15 @@ function getAreaEvents(days = DAYS_CURRENT) {
             // Get an Array of Events in All the Metro Areas
             let events = [];
             values.forEach(function (response) {
-                // For Each API Response
+                // For Each Metro Area API Response
                 //console.log("METRO", response);
                 events.push(...parseEvents(response));
             });
+            // Sort the Array using the current sort strategy
             events.sort(sortFunc);
             return events;
         }).then(function (events) {
+            // Display the Events on the Page
             displayEvents(events, "events in " + userLocation.city);
         })
         .catch(function (error) {
