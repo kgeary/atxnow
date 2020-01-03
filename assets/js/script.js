@@ -3,9 +3,12 @@
 //==============================================================================
 const MAX_METROS = 20;          // How many metro areas to include
 const MAX_DISPLAY_RESULTS = 25; // How Many Results to display at once.
+const MAX_QUERY_RESULTS = 50;   // How Many Results to request at once.
 const DAYS_CURRENT = 7;         // How many days to show for current events
 const DAYS_ARTIST = 30;         // How many days to show for artist events
 const KM_TO_MI = 0.6213711922;
+const MAX_DISTANCE_LOCAL = 30;
+
 //==============================================================================
 // HTML Elements
 //==============================================================================
@@ -41,12 +44,12 @@ const topHeadEl = document.getElementById("topHead");
 //=====================================================================
 const artistParams = [
     { description: "Name", field: "name" },
-    { description: "From", field: "origin"},
+    { description: "From", field: "origin" },
     { description: "Genre", field: "genre" },
     { description: "Mood", field: "mood" },
-    { description: "Style", field: "style"},
-    { description: "Formed", field: "formed"},
-    { description: "Website", field: "website", isLink:true},
+    { description: "Style", field: "style" },
+    { description: "Formed", field: "formed" },
+    { description: "Website", field: "website", isLink: true },
     // { description: "Biography", field: "bio"}, // Bio causes some styling issues due to the length
 ];
 const sk = "jNVqoANxyxv3dO3F";
@@ -62,20 +65,19 @@ let sortFunc = sortDateDistance;
 //=====================================================================
 btnSearchEl.addEventListener("click", function () {
     // Clear out old concert listings
-    eventListEl.innerHTML = "";
     // Get and Escape the User Input for security
-    let artist = escape(inputArtistEl.value);
     // Request the artist data from the API
-    getArtistData(artist, displayArtist);
     // Set the Status Label class to include is-danger to give red text
-    labelStatusEl.classList.remove("is-danger");
     // Update the Status Label to indicate we are loading
-    labelStatusEl.textContent = "Loading...";
     // Hide the old info
-    artistInfoEl.setAttribute("style", "display: none;");
     // Clear the input
+    eventListEl.innerHTML = "";
+    let artist = escape(inputArtistEl.value);
+    getArtistData(artist, displayArtist);
+    labelStatusEl.classList.remove("is-danger");
+    labelStatusEl.textContent = "Loading...";
+    artistInfoEl.setAttribute("style", "display: none;");
     inputArtistEl.value = "";
-
 });
 
 //=====================================================================
@@ -99,18 +101,19 @@ inputArtistEl.addEventListener("keypress", function (event) {
 //  artist = artist to get info for
 //  days = number of days to search. undefined = no max date
 //=====================================================================
-function getArtistEvents(artist, days) {
+function getArtistEvents(artist, days, page = 1) {
     let artistUrl = "https://api.songkick.com/api/3.0/artists/mbid:";
     artistUrl += artist.mbid;
-    artistUrl += "/calendar.json?apikey=" + sk + getDateQuery(days);
-    
+    artistUrl += "/calendar.json?apikey=" + sk + getDateQuery(days) + getPageQuery(page, MAX_QUERY_RESULTS);
+
     console.log(artistUrl);
     axios.get(artistUrl)
-        .then(function(response) {
+        .then(function (response) {
             console.log("ARTIST DATA HERE", response);
             let events = parseEvents(response);
             events.sort(sortFunc);
-            displayEvents(events, "events coming up for " + artist.name);
+            let totalEntries = response.data.resultsPage.totalEntries;
+            displayEvents(events, " of " + totalEntries + " events coming up for " + artist.name);
         })
 
 }
@@ -122,48 +125,48 @@ function getArtistEvents(artist, days) {
 // 3. Get the Events upcoming at each of the Metro ID's.
 // days = number of days out to get events.  leave undefined for no max
 //=====================================================================
-function getAreaEvents(days=DAYS_CURRENT) {    
+function getAreaEvents(days = DAYS_CURRENT) {
     // 1. API REQUEST - Look up the User Location based off IP Address
     const locationUrl = "https://json.geoiplookup.io/";
     let metro_areas = [];
 
     axios.get(locationUrl)
-        .then(function(response) {
+        .then(function (response) {
             //console.log("LOCATION RESPONSE RECEIVED");
             //console.log(response);
             userLocation = parseLocation(response);
             // Store the l
             return userLocation;
         })
-        .then (function (locationData) {
+        .then(function (locationData) {
             // Find Metro Areas based off the location
-            return axios.get(buildMetroUrl(locationData));  
+            return axios.get(buildMetroUrl(locationData));
         })
-        .then(function(response) {
+        .then(function (response) {
             // Parse Metro Areas
             //console.log("METRO AREAS RECEIVED!!!");
             //console.log(response);
             metro_areas = parseMetroAreas(response);
             return metro_areas;
-        }).then(function(areas) {
+        }).then(function (areas) {
             // Get an Array of Promises to Query Metro Areas
             // Wait for all promises to return
-            let promises = buildEventsPromiseArray(areas, days);       
+            let promises = buildEventPromiseArray(areas, days);
             return Promise.all(promises); // Return Status once all promises have completed.
         }).then(function (values) {
             // Get an Array of Events in All the Metro Areas
             let events = [];
-            values.forEach(function(response) {
-                // TODO Parse Metro Area Response Here
+            values.forEach(function (response) {
+                // For Each API Response
                 //console.log("METRO", response);
                 events.push(...parseEvents(response));
             });
             events.sort(sortFunc);
             return events;
-        }).then(function(events) {
+        }).then(function (events) {
             displayEvents(events, "events in " + userLocation.city);
-        })   
-        .catch(function(error) {
+        })
+        .catch(function (error) {
             //======================================================
             // ERROR ENCOUNTERED
             //======================================================
@@ -177,10 +180,15 @@ function getAreaEvents(days=DAYS_CURRENT) {
 // areas = array of Metro Area Objects from soundkick
 // days = number of days out to search. leave undefined for no max date
 //=====================================================================
-function buildEventsPromiseArray(areas, days) {
+function buildEventPromiseArray(areas, days, page = 1) {
     let promises = [];
+
+    // Create promises to get the Events for Each Metro Area
+    // returns the promises array
     areas.forEach(function (area) {
-        let url = "https://api.songkick.com/api/3.0/metro_areas/" + area.id + "/calendar.json?apikey=" + sk + getDateQuery(days);
+        let url = "https://api.songkick.com/api/3.0/metro_areas/" + area.id +
+            "/calendar.json?apikey=" + sk + getDateQuery(days)
+            + getPageQuery(page, MAX_QUERY_RESULTS);
         promises.push(axios.get(url));
     })
     return promises;
@@ -192,15 +200,14 @@ function buildEventsPromiseArray(areas, days) {
 function buildMetroUrl(location) {
     // Get Location Info
     let queryUrl = "https://api.songkick.com/api/3.0/search/locations.json?";
-                
+
+    // Use Latitude and Longitude if available else use city name
     if (location.lat && location.lon) {
-        // Use Latitude and Longitude if available
         queryUrl += "location=geo:" + location.lat + "," + location.lon + "&apikey=" + sk;
     } else {
-        // Use City Name
         queryUrl += "query=" + location.city.replace(" ", "+") + "&apikey=" + sk;
     }
-    return queryUrl;        
+    return queryUrl;
 }
 
 //=====================================================================
@@ -253,7 +260,7 @@ function getArtistData(artist, success, fail) {
             artist.tracks = parseTracks(topResponse.data.track);
 
             getArtistEvents(artist, DAYS_ARTIST);
-    
+
             // Return the Artist Object to the user provided success handler
             if (success) success(artist);
         })
@@ -269,9 +276,9 @@ function getArtistData(artist, success, fail) {
                 console.log(error);
                 labelStatusEl.classList.add("is-danger");
                 if (error.message) {
-                    labelStatusEl.textContent = error.message;    
+                    labelStatusEl.textContent = error.message;
                 } else {
-                    labelStatusEl.textContent = "An error occurred. please try again"; 
+                    labelStatusEl.textContent = "An error occurred. please try again";
                 }
             } else {
                 console.log("Unknown Error");
@@ -306,22 +313,23 @@ function parseEvents(response) {
     let events = response.data.resultsPage.results.event;
     if (!events) return respEvents;
 
-    //console.log("EVT", response);
+    console.log("EVT", response);
     events.forEach(function (evt) {
         respEvents.push({
-            id:         evt.id,
-            name:       evt.displayName,
-            type:       evt.type,
-            uri:        evt.uri,
-            startDate:  evt.start.date,
-            startTime:  evt.start.time, 
-            venue:      evt.venue.displayName,
-            venueUri:   evt.venue.uri,
-            city:       evt.location.city,
-            lat:        parseFloat(evt.location.lat),
-            lon:        parseFloat(evt.location.lng),
-            distance:   distance(userLocation.lat, userLocation.lon, 
-                                    evt.location.lat, evt.location.lng)
+            id: evt.id,
+            name: evt.displayName,
+            type: evt.type,
+            uri: evt.uri,
+            startDate: evt.start.date,
+            startTime: evt.start.time,
+            venue: evt.venue.displayName,
+            venueUri: evt.venue.uri,
+            city: evt.location.city,
+            lat: parseFloat(evt.location.lat),
+            lon: parseFloat(evt.location.lng),
+            total: evt.total,
+            distance: distance(userLocation.lat, userLocation.lon,
+                evt.location.lat, evt.location.lng)
         });
     });
     return respEvents;
@@ -330,20 +338,20 @@ function parseEvents(response) {
 //=====================================================
 // Parse the API response into an array of Metro Areas
 //=====================================================
-function parseMetroAreas(response, limit=MAX_METROS) {
+function parseMetroAreas(response, limit = MAX_METROS) {
     let areas = [];
     let locations = response.data.resultsPage.results.location;
     if (!locations) return areas;
-    
+
     let index = 0;
-    locations.forEach(function(location) {
+    locations.forEach(function (location) {
         if (index++ >= limit) return;
         areas.push({
-            id:         location.metroArea.id,
-            lat:        parseFloat(location.metroArea.lat),
-            lon:        parseFloat(location.metroArea.lng),
-            metroName:  location.metroArea.displayName,
-            cityName:   location.city.displayName
+            id: location.metroArea.id,
+            lat: parseFloat(location.metroArea.lat),
+            lon: parseFloat(location.metroArea.lng),
+            metroName: location.metroArea.displayName,
+            cityName: location.city.displayName
         });
         //console.log("METRO = ", location.metroArea.displayName, "-", location.city.displayName);
     });
@@ -389,7 +397,7 @@ function parseAlbums(responseAlbums) {
                 name: album.strAlbum,
                 year: album.intYearReleased,
             });
-        });    
+        });
     }
     return albums;
 }
@@ -419,7 +427,7 @@ function parseTracks(topTracks) {
 //=====================================================================
 // Update the HTML to display event info
 //=====================================================================
-function displayEvents(events, str, limit=MAX_DISPLAY_RESULTS) {
+function displayEvents(events, str, limit = MAX_DISPLAY_RESULTS) {
     let displayStr = (limit < events.length) ? limit + " of " : "";
     displayStr += events.length + " " + str;
 
@@ -429,7 +437,7 @@ function displayEvents(events, str, limit=MAX_DISPLAY_RESULTS) {
     eventListEl.innerHTML = "";
     let index = 0;
     // For Each Event in the Array - Create Elements and add them to the page
-    events.forEach(function(event) {
+    events.forEach(function (event) {
         if (index++ >= limit) return;
 
         let div = document.createElement("div");
@@ -445,6 +453,13 @@ function displayEvents(events, str, limit=MAX_DISPLAY_RESULTS) {
         headLink.setAttribute("href", event.uri);
         headLink.setAttribute("target", "_blank");
         headLink.textContent = event.name;
+        // Local Check
+        if (event.distance < MAX_DISTANCE_LOCAL) {
+            headLink.classList.add("has-text-weight-bold");
+            let span = document.createElement("span");
+            h1.appendChild(span);
+            span.textContent = " LOCAL!";
+        }
         // h3 - Event Type
         let h3 = document.createElement("h6");
         div.appendChild(h3);
@@ -474,7 +489,7 @@ function displayEvents(events, str, limit=MAX_DISPLAY_RESULTS) {
         a.setAttribute("target", "_blank");
         a.textContent = event.venue;
 
-        eventListEl.appendChild(div); 
+        eventListEl.appendChild(div);
     });
 }
 
@@ -496,7 +511,7 @@ function displayArtist(artist) {
 
     // Display the artist details table
     displayArtistTable(artist);
-    
+
     // Display the album discography list
     displayAlbums(artist.albums);
 
@@ -566,7 +581,7 @@ function displayTracks(tracks) {
     topListEl.innerHTML = "";
 
     if (tracks.length < 1) {
-        topHeadEl.textContent = "Top Tracks Not Available";    
+        topHeadEl.textContent = "Top Tracks Not Available";
         return;
     }
 
@@ -609,10 +624,10 @@ function getYouTube(src) {
 // ===================================================================
 function getDateQuery(days) {
     if (!days) return ""; // Return Empty String if Days not defined
-    
+
     let m = moment().clone().add(days, "days");
-    return "&min_date=" + moment().format("YYYY-MM-DD") + 
-            "&max_date=" + m.format("YYYY-MM-DD");
+    return "&min_date=" + moment().format("YYYY-MM-DD") +
+        "&max_date=" + m.format("YYYY-MM-DD");
 }
 
 //=========================================================
@@ -622,7 +637,7 @@ function getDateQuery(days) {
 //=========================================================
 function getPageQuery(page, perPage) {
     let str = "";
-    if (page)    { str += "&page=" + page; }
+    if (page) { str += "&page=" + page; }
     if (perPage) { str += "&per_page=" + perPage; }
     return str;
 }
@@ -630,23 +645,32 @@ function getPageQuery(page, perPage) {
 //=========================================================
 // Sort by Distance from Current Location
 //=========================================================
-function sortDistance(a,b) { 
-    return a.distance - b.distance; 
+function sortDistance(a, b) {
+    return a.distance - b.distance;
 }
 
 //=========================================================
 // Sort by Event Date
 //=========================================================
-function sortDate(a,b) {
+function sortDate(a, b) {
     return a.startDate.localeCompare(b.startDate);
 }
 
 //=========================================================
 // Sort by Event Date then Distance from Current Location
 //=========================================================
-function sortDateDistance(a,b) { 
-    let ret = sortDate(a,b); 
-    if (ret == 0) return sortDistance(a,b);
+function sortDateDistance(a, b) {
+    let ret = sortDate(a, b);
+    if (ret == 0) return sortDistance(a, b);
+    return ret;
+}
+
+//=========================================================
+// Sort by Distance then Date
+//=========================================================
+function sortDistanceDate(a, b) {
+    let ret = sortDistance(a, b);
+    if (ret == 0) return sortDate(a, b);
     return ret;
 }
 
@@ -656,12 +680,12 @@ function sortDateDistance(a,b) {
 function distance(lat1, lon1, lat2, lon2) {
     var p = 0.017453292519943295;    // Math.PI / 180
     var c = Math.cos;
-    var a = 0.5 - c((lat2 - lat1) * p)/2 + 
-            c(lat1 * p) * c(lat2 * p) * 
-            (1 - c((lon2 - lon1) * p))/2;
-  
+    var a = 0.5 - c((lat2 - lat1) * p) / 2 +
+        c(lat1 * p) * c(lat2 * p) *
+        (1 - c((lon2 - lon1) * p)) / 2;
+
     return 12742 * Math.asin(Math.sqrt(a)) * KM_TO_MI; // 2 * R; R = 6371 km * KM_TO_MI = MI
-  }
+}
 
 // ===================================================================
 // AJAX Error Handler
