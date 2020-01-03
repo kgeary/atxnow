@@ -5,6 +5,7 @@ const MAX_METROS = 20;          // How many metro areas to include
 const MAX_DISPLAY_RESULTS = 25; // How Many Results to display at once.
 const DAYS_CURRENT = 7;         // How many days to show for current events
 const DAYS_ARTIST = 30;         // How many days to show for artist events
+const KM_TO_MI = 0.6213711922;
 //==============================================================================
 // HTML Elements
 //==============================================================================
@@ -49,10 +50,9 @@ const artistParams = [
     { description: "Website", field: "website", isLink:true},
     // { description: "Biography", field: "bio"},
 ];
-
 const sk = "jNVqoANxyxv3dO3F";
-
 let userLocation;
+let sortFunc = sortDateDistance;
 
 //==============================================================================
 // Event Listeners
@@ -110,7 +110,7 @@ function getArtistEvents(artist, days) {
         .then(function(response) {
             console.log("ARTIST DATA HERE", response);
             let events = parseEvents(response);
-            events.sort(sortDistance);
+            events.sort(sortFunc);
             displayEvents(events, "events coming up for " + artist.name);
         })
 
@@ -159,7 +159,7 @@ function getAreaEvents(days=DAYS_CURRENT) {
                 //console.log("METRO", response);
                 events.push(...parseEvents(response));
             });
-            events.sort(sortDistance);
+            events.sort(sortFunc);
             return events;
         }).then(function(events) {
             displayEvents(events, "events in " + userLocation.city);
@@ -321,6 +321,8 @@ function parseEvents(response) {
             city:       evt.location.city,
             lat:        parseFloat(evt.location.lat),
             lon:        parseFloat(evt.location.lng),
+            distance:   distance(userLocation.lat, userLocation.lon, 
+                                    evt.location.lat, evt.location.lng)
         });
     });
     return respEvents;
@@ -461,6 +463,10 @@ function displayEvents(events, str, limit=MAX_DISPLAY_RESULTS) {
         let outputTime = inputMoment.format('dddd MMMM Do @ h:mm a');
         p2.textContent = outputTime;
 
+        // p3 - Distance to Event
+        let p3 = document.createElement("p");
+        div.appendChild(p3);
+        p3.textContent = "Distance to Event: " + (event.distance * KM_TO_MI).toFixed(1) + "mi";
         // a - Venue
         let a = document.createElement("a");
         div.appendChild(a);
@@ -624,15 +630,21 @@ function getPageQuery(page, perPage) {
     }
 }
 
-//=========================================================
-// Sort the events array by distance from the user
-//=========================================================
-function sortDistance(a, b) {
-    if (!userLocation) return 0;
-    console.log("SORTING!!!");
-    return (distance(userLocation.lat, userLocation.lon, a.lat, a.lon) - 
-            distance(userLocation.lat, userLocation.lon, b.lat, b.lon));
+// Sort Functions if needed
+function sortDistance(a,b) { return a.distance - b.distance; }
+
+// Sort by Date then Distance
+function sortDateDistance(a,b) { 
+    let ret = sortDate(a,b); 
+    if (ret == 0) return sortDistance(a,b);
+    return ret;
 }
+
+// Sort by Date
+function sortDate(a,b) {
+    return a.startDate.localeCompare(b.startDate);
+}
+
 
 //=========================================================
 // Calculate the distance between 2 points
