@@ -36,9 +36,8 @@ const topHeadEl = document.getElementById("topHead");
 //=====================================================================
 // Dynamically create a table of Artist Information
 // All the fields in the html that should be updated
-// el - the element to update
-// type - src -or- txt.  src for image elements and txt to set content
-// field - the name of the field within the artist object
+// description - Table heading cell text
+// field - Name of the field in artist object
 //=====================================================================
 const artistParams = [
     { description: "Name", field: "name" },
@@ -48,7 +47,7 @@ const artistParams = [
     { description: "Style", field: "style"},
     { description: "Formed", field: "formed"},
     { description: "Website", field: "website", isLink:true},
-    // { description: "Biography", field: "bio"},
+    // { description: "Biography", field: "bio"}, // Bio causes some styling issues due to the length
 ];
 const sk = "jNVqoANxyxv3dO3F";
 let userLocation;
@@ -103,7 +102,7 @@ inputArtistEl.addEventListener("keypress", function (event) {
 function getArtistEvents(artist, days) {
     let artistUrl = "https://api.songkick.com/api/3.0/artists/mbid:";
     artistUrl += artist.mbid;
-    artistUrl += "/calendar.json?apikey=" + sk + getMaxDateQuery(days);
+    artistUrl += "/calendar.json?apikey=" + sk + getDateQuery(days);
     
     console.log(artistUrl);
     axios.get(artistUrl)
@@ -181,7 +180,7 @@ function getAreaEvents(days=DAYS_CURRENT) {
 function buildEventsPromiseArray(areas, days) {
     let promises = [];
     areas.forEach(function (area) {
-        let url = "https://api.songkick.com/api/3.0/metro_areas/" + area.id + "/calendar.json?apikey=" + sk + getMaxDateQuery(days);
+        let url = "https://api.songkick.com/api/3.0/metro_areas/" + area.id + "/calendar.json?apikey=" + sk + getDateQuery(days);
         promises.push(axios.get(url));
     })
     return promises;
@@ -466,7 +465,7 @@ function displayEvents(events, str, limit=MAX_DISPLAY_RESULTS) {
         // p3 - Distance to Event
         let p3 = document.createElement("p");
         div.appendChild(p3);
-        p3.textContent = "Distance to Event: " + (event.distance * KM_TO_MI).toFixed(1) + "mi";
+        p3.textContent = "Distance to Event: " + event.distance.toFixed(1) + "mi";
         // a - Venue
         let a = document.createElement("a");
         div.appendChild(a);
@@ -605,14 +604,15 @@ function getYouTube(src) {
 }
 
 // ===================================================================
-// Return the query for max_date
+// Return the query for min_date and max_date
 // days = days from today's date
 // ===================================================================
-function getMaxDateQuery(days) {
+function getDateQuery(days) {
     if (!days) return ""; // Return Empty String if Days not defined
-
+    
     let m = moment().clone().add(days, "days");
-    return "&max_date=" + m.format("YYYY-MM-DD");
+    return "&min_date=" + moment().format("YYYY-MM-DD") + 
+            "&max_date=" + m.format("YYYY-MM-DD");
 }
 
 //=========================================================
@@ -622,32 +622,36 @@ function getMaxDateQuery(days) {
 //=========================================================
 function getPageQuery(page, perPage) {
     let str = "";
-    if (page) {
-        str += "&page=" + page;
-    }
-    if (perPage) {
-        str += "&per_page=" + perPage;
-    }
+    if (page)    { str += "&page=" + page; }
+    if (perPage) { str += "&per_page=" + perPage; }
+    return str;
 }
 
-// Sort Functions if needed
-function sortDistance(a,b) { return a.distance - b.distance; }
+//=========================================================
+// Sort by Distance from Current Location
+//=========================================================
+function sortDistance(a,b) { 
+    return a.distance - b.distance; 
+}
 
-// Sort by Date then Distance
+//=========================================================
+// Sort by Event Date
+//=========================================================
+function sortDate(a,b) {
+    return a.startDate.localeCompare(b.startDate);
+}
+
+//=========================================================
+// Sort by Event Date then Distance from Current Location
+//=========================================================
 function sortDateDistance(a,b) { 
     let ret = sortDate(a,b); 
     if (ret == 0) return sortDistance(a,b);
     return ret;
 }
 
-// Sort by Date
-function sortDate(a,b) {
-    return a.startDate.localeCompare(b.startDate);
-}
-
-
 //=========================================================
-// Calculate the distance between 2 points
+// Calculate the distance between 2 Locations (lat,lon)
 //=========================================================
 function distance(lat1, lon1, lat2, lon2) {
     var p = 0.017453292519943295;    // Math.PI / 180
@@ -656,7 +660,7 @@ function distance(lat1, lon1, lat2, lon2) {
             c(lat1 * p) * c(lat2 * p) * 
             (1 - c((lon2 - lon1) * p))/2;
   
-    return 12742 * Math.asin(Math.sqrt(a)); // 2 * R; R = 6371 km
+    return 12742 * Math.asin(Math.sqrt(a)) * KM_TO_MI; // 2 * R; R = 6371 km * KM_TO_MI = MI
   }
 
 // ===================================================================
