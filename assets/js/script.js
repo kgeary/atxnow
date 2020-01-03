@@ -86,11 +86,19 @@ inputArtistEl.addEventListener("keypress", function (event) {
 //==============================================================================
 // Helper Functions
 //==============================================================================
-function getArtistEvents(artist) {
+
+//=====================================================================
+// Get Artist Events
+//  Call the API to get Artist Event Data for a given artist
+//  artist = artist to get info for
+//  days = number of days to search. undefined = no max date
+//=====================================================================
+function getArtistEvents(artist, days) {
     let artistUrl = "https://api.songkick.com/api/3.0/artists/mbid:";
     artistUrl += artist.mbid;
-    artistUrl += "/calendar.json?apikey=" + sk;
+    artistUrl += "/calendar.json?apikey=" + sk + getMaxDateQuery(days);
     
+    console.log(artistUrl);
     axios.get(artistUrl)
         .then(function(response) {
             console.log("ARTIST ====== DATA HERE");
@@ -106,8 +114,9 @@ function getArtistEvents(artist) {
 // 1. Get the user location from IP
 // 2. Get the Metro ID's for the current location
 // 3. Get the Events upcoming at each of the Metro ID's.
+// days = number of days out to get events.  leave undefined for no max
 //=====================================================================
-function getAreaEvents() {    
+function getAreaEvents(days) {    
     // 1. API REQUEST - Look up the User Location based off IP Address
     const locationUrl = "https://json.geoiplookup.io/";
     let lat;
@@ -141,7 +150,7 @@ function getAreaEvents() {
             return metro_areas;
         }).then(function(areas) {
             // Get an Array of Metro Areas to Query
-            let urls = getEventsUrlArray(areas);
+            let urls = getEventsUrlArray(areas, days);
             let promises = [];
             urls.forEach(function (url) {
                 promises.push(axios.get(url));
@@ -157,7 +166,7 @@ function getAreaEvents() {
             });
             return events;
         }).then(function(events) {
-            displayEvents(events, "events in " + city, 10);
+            displayEvents(events, "events in " + city, 20);
         })   
         .catch(function(error) {
             //======================================================
@@ -170,11 +179,13 @@ function getAreaEvents() {
 
 //=====================================================================
 // Returns URL to query Metro Areas for Events
+// areas = array of Metro Area Objects from soundkick
+// days = number of days out to search. leave undefined for no max date
 //=====================================================================
-function getEventsUrlArray(areas) {
+function getEventsUrlArray(areas, days) {
     let urls = [];
     areas.forEach(function (area) {
-        urls.push("https://api.songkick.com/api/3.0/metro_areas/" + area.id + "/calendar.json?apikey=" + sk);
+        urls.push("https://api.songkick.com/api/3.0/metro_areas/" + area.id + "/calendar.json?apikey=" + sk + getMaxDateQuery(days));
     })
     return urls;    
 }
@@ -188,7 +199,7 @@ function getMetroUrl(location) {
                 
     if (location.lat && location.lon) {
         // Use Latitude and Longitude if available
-        queryUrl += "location=geo:" + location.lat.toFixed(2) + "," + location.lon.toFixed(2) + "&apikey=" + sk;
+        queryUrl += "location=geo:" + location.lat + "," + location.lon + "&apikey=" + sk;
     } else {
         // Use City Name
         queryUrl += "query=" + location.city.replace(" ", "+") + "&apikey=" + sk;
@@ -245,11 +256,11 @@ function getArtistData(artist, success, fail) {
             artist.albums = parseAlbums(discResponse.data.album);
             artist.tracks = parseTracks(topResponse.data.track);
 
-            getArtistEvents(artist);
+            getArtistEvents(artist, 3);
 
     
             // Return the Artist Object to the user provided success handler
-            success(artist);
+            if (success) success(artist);
         })
         .catch(function (error) {
             //=====================================================
@@ -292,13 +303,14 @@ function parseEvents(response) {
 
     events.forEach(function (evt) {
         respEvents.push({
+            id:         evt.id,
             name:       evt.displayName,
             type:       evt.type,
             uri:        evt.uri,
             startDate:  evt.start.date,
             startTime:  evt.start.time, 
             venue:      evt.venue.displayName,
-            venuedId:   evt.venue.id,
+            venueUri:   evt.venue.uri,
             city:       evt.location.city,
         });
     });
@@ -321,6 +333,7 @@ function parseMetroAreas(response) {
             metroName:  location.metroArea.displayName,
             cityName:   location.city.displayName
         });
+        console.log("METRO = ", location.metroArea.displayName, "-", location.city.displayName);
     });
     return areas;
 }
@@ -391,52 +404,60 @@ function parseTracks(topTracks) {
 }
 
 //=====================================================================
-// Update the HTML to display the concert info
+// Update the HTML to display event info
 //=====================================================================
 function displayEvents(events, str, limit=50) {
     let displayStr = (limit < events.length) ? limit + " of " : "";
     displayStr += events.length + " " + str;
 
+    // Set the Event Section Heading
     eventHeadEl.textContent = displayStr;
+    // Clear the current Event List from HTML
     eventListEl.innerHTML = "";
     let index = 0;
+    // For Each Event in the Array - Create Elements and add them to the page
     events.forEach(function(event) {
+        if (index++ >= limit) return;
+
         let div = document.createElement("div");
         div.setAttribute("class", "box");
         // h1 - Event Name
-        let h1 = document.createElement("h3");
+        let h1 = document.createElement("h4");
         div.appendChild(h1);
         h1.classList.add("title");
-        h1.textContent = event.name;
+        // a - Link to Event Details.
+        let headLink = document.createElement("a");
+        h1.appendChild(headLink);
+        headLink.setAttribute("class", "event-link");
+        headLink.setAttribute("href", event.uri);
+        headLink.setAttribute("target", "_blank");
+        headLink.textContent = event.name;
         // h3 - Event Type
-        let h3 = document.createElement("h5");
+        let h3 = document.createElement("h6");
         div.appendChild(h3);
         h3.classList.add("subtitle");
         h3.textContent = event.type;
-        // p - City
-        let p = document.createElement("p");
-        div.appendChild(p);
-        p.textContent = `${event.city}`;
-        // p2 - Start Date Time
+        // p1 - City
+        let p1 = document.createElement("p");
+        div.appendChild(p1);
+        p1.textContent = event.city;
+
+        // p2 - Start Date/Time Formatted
         let p2 = document.createElement("p");
         div.appendChild(p2);
         let inputMoment = moment(event.startDate + event.startTime, "YYYYMMDDHHmm");
         let outputTime = inputMoment.format('dddd MMMM Do @ h:mm a');
-
         p2.textContent = outputTime;
-        // a - Venue (TODO: Activate link)
+
+        // a - Venue
         let a = document.createElement("a");
         div.appendChild(a);
-        a.textContent = `${event.venue}`;
-        // TODO Make this link to Venue Details
-        a.setAttribute("class", "event-link");
-        a.setAttribute("href", "#");
-        a.setAttribute("data-id", event.venuedId);
+        a.setAttribute("class", "venue-link");
+        a.setAttribute("href", event.venueUri);
+        a.setAttribute("target", "_blank");
+        a.textContent = event.venue;
+
         eventListEl.appendChild(div); 
-        
-        // Limit our search results
-        index++;
-        if (index >= limit) return;
     });
 }
 
@@ -566,6 +587,17 @@ function getYouTube(src) {
 }
 
 // ===================================================================
+// Return the query for max_date
+// days = days from today's date
+// ===================================================================
+function getMaxDateQuery(days) {
+    if (!days) return ""; // Return Empty String if Days not defined
+
+    let m = moment().clone().add(days, "days");
+    return "&max_date=" + m.format("YYYY-MM-DD");
+}
+
+// ===================================================================
 // AJAX Error Handler
 //   This will be called instead of our success handler if any of the
 //   api requests fail.
@@ -582,4 +614,4 @@ function onError(error) {
 ////////////////////////////////////
 
 // Get Concert Data for the current location
-getAreaEvents();
+getAreaEvents(1);
