@@ -40,7 +40,7 @@ const artistParams = [
     { description: "Style", field: "style"},
     { description: "Formed", field: "formed"},
     { description: "Website", field: "website", isLink:true},
-    { description: "Biography", field: "bio"},
+    // { description: "Biography", field: "bio"},
 ];
 
 const sk = "jNVqoANxyxv3dO3F";
@@ -55,13 +55,8 @@ let userLoc;
 // Search Button Click Handler
 //=====================================================================
 btnSearchEl.addEventListener("click", function () {
-    // Get the User location based on IP address from API
-    getConcertData(function(userLocation){
-        console.table(userLocation);
-        userLoc = userLocation;
-        // TODO - Do something with the location data
-    });
-
+    // Clear out old concert listings
+    eventListEl.innerHTML = "";
     // Get and Escape the User Input for security
     let artist = escape(inputArtistEl.value);
     // Request the artist data from the API
@@ -74,6 +69,7 @@ btnSearchEl.addEventListener("click", function () {
     artistInfoEl.setAttribute("style", "display: none;");
     // Clear the input
     inputArtistEl.value = "";
+
 });
 
 //=====================================================================
@@ -90,17 +86,32 @@ inputArtistEl.addEventListener("keypress", function (event) {
 //==============================================================================
 // Helper Functions
 //==============================================================================
+function getArtistEvents(artist) {
+    let artistUrl = "https://api.songkick.com/api/3.0/artists/mbid:";
+    artistUrl += artist.mbid;
+    artistUrl += "/calendar.json?apikey=" + sk;
+    
+    axios.get(artistUrl)
+        .then(function(response) {
+            console.log("ARTIST ====== DATA HERE");
+            console.log(response);
+            let events = parseArtistEvents(response);
+            displayEvents(events, "events coming up for " + artist.name);
+        })
+
+}
 
 //=====================================================================
 // Call the API to get the get the concert Data
 // 1. Get the user location from IP
 // 2. Get the Metro ID's for the current location
 //=====================================================================
-function getConcertData(success, fail) {    
+function getAreaEvents() {    
     // 1. API REQUEST - Look up the User Location based off IP Address
     const locationUrl = "https://json.geoiplookup.io/";
     let lat;
     let lon;
+    let city;
     let metro_areas = [];
 
     axios.get(locationUrl)
@@ -115,6 +126,7 @@ function getConcertData(success, fail) {
             };
             lat = locationData.lat;
             lon = locationData.lon;
+            city = locationData.city;
             return locationData;
         })
         .then (function (location) {
@@ -144,18 +156,14 @@ function getConcertData(success, fail) {
             });
             return events;
         }).then(function(events) {
-            displayEvents(events);
+            displayEvents(events, "events in " + city);
         })   
-        .then(function(response) {
-            if (success) success(response);
-        }) 
         .catch(function(error) {
             //======================================================
             // ERROR ENCOUNTERED
             //======================================================
             console.log("Error Getting Data!!!!");
             console.log(error);
-            if (fail) fail("Failed to get Concert Data");
         });
 }
 
@@ -235,6 +243,9 @@ function getArtistData(artist, success, fail) {
             let artist = parseArtist(artistResponse.data.artists[0]);
             artist.albums = parseAlbums(discResponse.data.album);
             artist.tracks = parseTracks(topResponse.data.track);
+
+            getArtistEvents(artist);
+
     
             // Return the Artist Object to the user provided success handler
             success(artist);
@@ -268,6 +279,28 @@ function getArtistData(artist, success, fail) {
                 fail(error);
             }
         });
+}
+
+//=====================================================
+// Parse the events for an Artist
+//=====================================================
+function parseArtistEvents(response) {
+    let respEvents = [];
+    let events = response.data.resultsPage.results.event;
+    if (!events) return respEvents;
+
+    events.forEach(function (event) {
+        respEvents.push({
+            name:       event.displayName,
+            type:       event.type,
+            uri:        event.uri,
+            startDate:  event.start.date,
+            startTime:  event.start.time, 
+            venue:      event.venue.displayName,
+            venuedId:   event.venue.id,
+        });
+    });
+    return respEvents;
 }
 
 //=====================================================
@@ -318,7 +351,7 @@ function parseMetroAreas(response) {
 function parseArtist(artistData) {
     return artist = {
         id: artistData.idArtist,
-        //musicBrainzId: artistData.strMusicBrainzID,
+        mbid: artistData.strMusicBrainzID,
         bio: artistData.strBiographyEN,
         formed: artistData.intFormedYear,
         genre: artistData.strGenre,
@@ -379,19 +412,20 @@ function parseTracks(topTracks) {
 //=====================================================================
 // Update the HTML to display the concert info
 //=====================================================================
-function displayEvents(events) {
-    eventHeadEl.textContent = events.length + " events in your area";
+function displayEvents(events, str) {
+    eventHeadEl.textContent = events.length + " " + str;
     eventListEl.innerHTML = "";
     
     events.forEach(function(event) {
         let div = document.createElement("div");
+        div.setAttribute("class", "divider");
         // h1 - Event Name
-        let h1 = document.createElement("h1");
+        let h1 = document.createElement("h3");
         div.appendChild(h1);
         h1.classList.add("title");
         h1.textContent = event.name;
         // h3 - Event Type
-        let h3 = document.createElement("h3");
+        let h3 = document.createElement("h5");
         div.appendChild(h3);
         h3.classList.add("subtitle");
         h3.textContent = event.type;
@@ -471,10 +505,10 @@ function displayArtistTable(artist) {
     let imgRow = document.createElement("tr");
     let imgCol = document.createElement("td");
     imgCol.setAttribute("colspan", "2");
-    let img = document.createElement("img");
-    img.setAttribute("src", artist.logo);
-    img.setAttribute("alt", artist.name + " logo");
-    imgCol.appendChild(img);
+    //let img = document.createElement("img");
+    //img.setAttribute("src", artist.logo);
+    //img.setAttribute("alt", artist.name + " logo");
+    //imgCol.appendChild(img);
     imgRow.appendChild(imgCol);
     artistTableEl.appendChild(imgRow);
 }
@@ -529,7 +563,9 @@ function displayTracks(tracks) {
 // Return the html for a youtube video
 //====================================================================
 function getYouTube(src) {
-    if (!src.includes("youtube.com/embed/")) {
+    if (!src) {
+        return '';
+    } else if (!src.includes("youtube.com/embed/")) {
         src = src.replace("www.youtube.com/", "www.youtube.com/embed/");
     }
     return '<iframe src="' + src + '" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
@@ -550,5 +586,6 @@ function onError(error) {
 ////////////////////////////////////
 // MAIN - Code that runs at startup
 ////////////////////////////////////
-// Save the user location
-getConcertData();
+
+// Get Concert Data for the current location
+getAreaEvents();
