@@ -385,24 +385,29 @@ function displayEvents(events) {
     
     events.forEach(function(event) {
         let div = document.createElement("div");
+        // h1 - Event Name
+        let h1 = document.createElement("h1");
+        div.appendChild(h1);
+        h1.classList.add("title");
+        h1.textContent = event.name;
+        // h3 - Event Type
+        let h3 = document.createElement("h3");
+        div.appendChild(h3);
+        h3.classList.add("subtitle");
+        h3.textContent = event.type;
+        // p - Start Date/Time
         let p = document.createElement("p");
-        p.textContent = `
-            ${event.type}
-            ${event.name}
-            ${event.startDate} ${event.startTime}
-            ${event.venue}
-        `;
-        /*
-            name:       event.displayName,
-            type:       event.type,
-            uri:        event.uri,
-            startDate:  event.start.date,
-            startTime:  event.start.time, 
-            venue:      event.venue.displayName,
-            venuedId:   event.venue.id,
-        */
-
         div.appendChild(p);
+        p.textContent = `${event.startDate} ${event.startTime}`;
+        // a - Venue (TODO: Activate link)
+        let a = document.createElement("a");
+        div.appendChild(a);
+        a.textContent = `${event.venue}`;
+        // TODO Make this link to Venue Details
+        a.setAttribute("class", "event-link");
+        a.setAttribute("href", "#");
+        a.setAttribute("data-id", event.venuedId);
+
         eventListEl.appendChild(div); 
     });
 }
