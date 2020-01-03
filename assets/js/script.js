@@ -1,11 +1,10 @@
 //==============================================================================
 // CONSTANTS
 //==============================================================================
-const RESULT_LIMIT = 50;
-const MAX_METROS = 20;
-const MAX_DISPLAY_RESULTS = 25;
-const DAYS_CURRENT = 7; // How many days to show for current happenings
-
+const MAX_METROS = 20;          // How many metro areas to include
+const MAX_DISPLAY_RESULTS = 25; // How Many Results to display at once.
+const DAYS_CURRENT = 7;         // How many days to show for current events
+const DAYS_ARTIST = 30;         // How many days to show for artist events
 //==============================================================================
 // HTML Elements
 //==============================================================================
@@ -53,7 +52,7 @@ const artistParams = [
 
 const sk = "jNVqoANxyxv3dO3F";
 
-let userLoc;
+let userLocation;
 
 //==============================================================================
 // Event Listeners
@@ -109,9 +108,9 @@ function getArtistEvents(artist, days) {
     console.log(artistUrl);
     axios.get(artistUrl)
         .then(function(response) {
-            console.log("ARTIST ====== DATA HERE");
-            console.log(response);
+            console.log("ARTIST DATA HERE", response);
             let events = parseEvents(response);
+            events.sort(sortDistance);
             displayEvents(events, "events coming up for " + artist.name);
         })
 
@@ -127,54 +126,43 @@ function getArtistEvents(artist, days) {
 function getAreaEvents(days=DAYS_CURRENT) {    
     // 1. API REQUEST - Look up the User Location based off IP Address
     const locationUrl = "https://json.geoiplookup.io/";
-    let lat;
-    let lon;
-    let city;
     let metro_areas = [];
 
     axios.get(locationUrl)
         .then(function(response) {
             //console.log("LOCATION RESPONSE RECEIVED");
             //console.log(response);
-            var locationData = {
-                city: response.data.city,
-                zip: response.data.postal_code,
-                lat: response.data.latitude,
-                lon: response.data.longitude,
-            };
-            lat = locationData.lat;
-            lon = locationData.lon;
-            city = locationData.city;
-            return locationData;
+            userLocation = parseLocation(response);
+            // Store the l
+            return userLocation;
         })
-        .then (function (location) {
-            return axios.get(getMetroUrl(location));  
+        .then (function (locationData) {
+            // Find Metro Areas based off the location
+            return axios.get(buildMetroUrl(locationData));  
         })
         .then(function(response) {
-            // Parse Location Info
+            // Parse Metro Areas
             //console.log("METRO AREAS RECEIVED!!!");
             //console.log(response);
             metro_areas = parseMetroAreas(response);
             return metro_areas;
         }).then(function(areas) {
-            // Get an Array of Metro Areas to Query
-            let urls = getEventsUrlArray(areas, days);
-            let promises = [];
-            urls.forEach(function (url) {
-                promises.push(axios.get(url));
-            });       
-            return Promise.all(promises);
+            // Get an Array of Promises to Query Metro Areas
+            // Wait for all promises to return
+            let promises = buildEventsPromiseArray(areas, days);       
+            return Promise.all(promises); // Return Status once all promises have completed.
         }).then(function (values) {
             // Get an Array of Events in All the Metro Areas
             let events = [];
             values.forEach(function(response) {
                 // TODO Parse Metro Area Response Here
-                //console.log(response);
+                //console.log("METRO", response);
                 events.push(...parseEvents(response));
             });
+            events.sort(sortDistance);
             return events;
         }).then(function(events) {
-            displayEvents(events, "events in " + city);
+            displayEvents(events, "events in " + userLocation.city);
         })   
         .catch(function(error) {
             //======================================================
@@ -186,22 +174,23 @@ function getAreaEvents(days=DAYS_CURRENT) {
 }
 
 //=====================================================================
-// Returns URL to query Metro Areas for Events
+// Returns Promises to query Metro Areas for Events
 // areas = array of Metro Area Objects from soundkick
 // days = number of days out to search. leave undefined for no max date
 //=====================================================================
-function getEventsUrlArray(areas, days) {
-    let urls = [];
+function buildEventsPromiseArray(areas, days) {
+    let promises = [];
     areas.forEach(function (area) {
-        urls.push("https://api.songkick.com/api/3.0/metro_areas/" + area.id + "/calendar.json?apikey=" + sk + getMaxDateQuery(days));
+        let url = "https://api.songkick.com/api/3.0/metro_areas/" + area.id + "/calendar.json?apikey=" + sk + getMaxDateQuery(days);
+        promises.push(axios.get(url));
     })
-    return urls;    
+    return promises;
 }
 
 //=====================================================================
 // Returns URL to get a list of Metro Areas based on location
 //=====================================================================
-function getMetroUrl(location) {
+function buildMetroUrl(location) {
     // Get Location Info
     let queryUrl = "https://api.songkick.com/api/3.0/search/locations.json?";
                 
@@ -240,7 +229,7 @@ function getArtistData(artist, success, fail) {
     ])
         .then(function (responses) {
             // ONCE All Requests have been successfully resolved...   
-            // Unpack the individual reponse values from the responses array 
+            // Unpack the individual response values from the responses array 
             let [artistResponse, discResponse, topResponse] = responses;
 
             //=====================================================
@@ -264,8 +253,7 @@ function getArtistData(artist, success, fail) {
             artist.albums = parseAlbums(discResponse.data.album);
             artist.tracks = parseTracks(topResponse.data.track);
 
-            getArtistEvents(artist, 3);
-
+            getArtistEvents(artist, DAYS_ARTIST);
     
             // Return the Artist Object to the user provided success handler
             if (success) success(artist);
@@ -304,11 +292,22 @@ function getArtistData(artist, success, fail) {
 //=====================================================
 // Parse the events for an Artist or Metro Area
 //=====================================================
+function parseLocation(response) {
+    var locationData = {
+        city: response.data.city,
+        zip: response.data.postal_code,
+        lat: parseFloat(response.data.latitude),
+        lon: parseFloat(response.data.longitude),
+    };
+    return locationData;
+}
+
 function parseEvents(response) {
     let respEvents = [];
     let events = response.data.resultsPage.results.event;
     if (!events) return respEvents;
 
+    //console.log("EVT", response);
     events.forEach(function (evt) {
         respEvents.push({
             id:         evt.id,
@@ -320,6 +319,8 @@ function parseEvents(response) {
             venue:      evt.venue.displayName,
             venueUri:   evt.venue.uri,
             city:       evt.location.city,
+            lat:        parseFloat(evt.location.lat),
+            lon:        parseFloat(evt.location.lng),
         });
     });
     return respEvents;
@@ -338,14 +339,14 @@ function parseMetroAreas(response, limit=MAX_METROS) {
         if (index++ >= limit) return;
         areas.push({
             id:         location.metroArea.id,
-            lat:        location.metroArea.lat,
-            lon:        location.metroArea.lng,
+            lat:        parseFloat(location.metroArea.lat),
+            lon:        parseFloat(location.metroArea.lng),
             metroName:  location.metroArea.displayName,
             cityName:   location.city.displayName
         });
         //console.log("METRO = ", location.metroArea.displayName, "-", location.city.displayName);
     });
-    console.table(areas);
+    //console.table(areas);
     return areas;
 }
 
@@ -476,7 +477,7 @@ function displayEvents(events, str, limit=MAX_DISPLAY_RESULTS) {
 // Update the HTML to display the artist info
 //=====================================================================
 function displayArtist(artist) {
-    console.log("Displaying Artist");
+    //console.log("Displaying Artist");
 
     // Clear Out the old table
     artistTableEl.innerHTML = "";
@@ -607,6 +608,44 @@ function getMaxDateQuery(days) {
     let m = moment().clone().add(days, "days");
     return "&max_date=" + m.format("YYYY-MM-DD");
 }
+
+//=========================================================
+// Return the query for paging
+// 1. page = page number starting at 1
+// 2. perPage = Results per Page
+//=========================================================
+function getPageQuery(page, perPage) {
+    let str = "";
+    if (page) {
+        str += "&page=" + page;
+    }
+    if (perPage) {
+        str += "&per_page=" + perPage;
+    }
+}
+
+//=========================================================
+// Sort the events array by distance from the user
+//=========================================================
+function sortDistance(a, b) {
+    if (!userLocation) return 0;
+    console.log("SORTING!!!");
+    return (distance(userLocation.lat, userLocation.lon, a.lat, a.lon) - 
+            distance(userLocation.lat, userLocation.lon, b.lat, b.lon));
+}
+
+//=========================================================
+// Calculate the distance between 2 points
+//=========================================================
+function distance(lat1, lon1, lat2, lon2) {
+    var p = 0.017453292519943295;    // Math.PI / 180
+    var c = Math.cos;
+    var a = 0.5 - c((lat2 - lat1) * p)/2 + 
+            c(lat1 * p) * c(lat2 * p) * 
+            (1 - c((lon2 - lon1) * p))/2;
+  
+    return 12742 * Math.asin(Math.sqrt(a)); // 2 * R; R = 6371 km
+  }
 
 // ===================================================================
 // AJAX Error Handler
