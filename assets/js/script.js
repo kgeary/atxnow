@@ -409,13 +409,17 @@ function displayEvents(events, str) {
         div.appendChild(h3);
         h3.classList.add("subtitle");
         h3.textContent = event.type;
-        // p - Start Date/Time
+        // p - City
         let p = document.createElement("p");
         div.appendChild(p);
         p.textContent = `${event.city}`;
+        // p2 - Start Date Time
         let p2 = document.createElement("p");
         div.appendChild(p2);
-        p2.textContent = `${event.startDate} ${event.startTime}`;
+        let inputMoment = moment(event.startDate + event.startTime, "YYYYMMDDHHmm");
+        let outputTime = inputMoment.format('dddd MMMM Do @ h:mm a');
+
+        p2.textContent = outputTime;
         // a - Venue (TODO: Activate link)
         let a = document.createElement("a");
         div.appendChild(a);
