@@ -102,9 +102,10 @@ function getArtistEvents(artist) {
 }
 
 //=====================================================================
-// Call the API to get the get the concert Data
+// Call the API to get concert Data in the area
 // 1. Get the user location from IP
 // 2. Get the Metro ID's for the current location
+// 3. Get the Events upcoming at each of the Metro ID's.
 //=====================================================================
 function getAreaEvents() {    
     // 1. API REQUEST - Look up the User Location based off IP Address
@@ -152,11 +153,11 @@ function getAreaEvents() {
             values.forEach(function(response) {
                 // TODO Parse Metro Area Response Here
                 //console.log(response);
-                //events.push(...parseMetroEvents(response));
+                events.push(...parseEvents(response));
             });
             return events;
         }).then(function(events) {
-            displayEvents(events, "events in " + city);
+            displayEvents(events, "events in " + city, 10);
         })   
         .catch(function(error) {
             //======================================================
@@ -289,16 +290,16 @@ function parseEvents(response) {
     let events = response.data.resultsPage.results.event;
     if (!events) return respEvents;
 
-    events.forEach(function (event) {
+    events.forEach(function (evt) {
         respEvents.push({
-            name:       event.displayName,
-            type:       event.type,
-            uri:        event.uri,
-            startDate:  event.start.date,
-            startTime:  event.start.time, 
-            venue:      event.venue.displayName,
-            venuedId:   event.venue.id,
-            city:       event.location.city,
+            name:       evt.displayName,
+            type:       evt.type,
+            uri:        evt.uri,
+            startDate:  evt.start.date,
+            startTime:  evt.start.time, 
+            venue:      evt.venue.displayName,
+            venuedId:   evt.venue.id,
+            city:       evt.location.city,
         });
     });
     return respEvents;
@@ -392,10 +393,13 @@ function parseTracks(topTracks) {
 //=====================================================================
 // Update the HTML to display the concert info
 //=====================================================================
-function displayEvents(events, str) {
-    eventHeadEl.textContent = events.length + " " + str;
+function displayEvents(events, str, limit=50) {
+    let displayStr = (limit < events.length) ? limit + " of " : "";
+    displayStr += events.length + " " + str;
+
+    eventHeadEl.textContent = displayStr;
     eventListEl.innerHTML = "";
-    
+    let index = 0;
     events.forEach(function(event) {
         let div = document.createElement("div");
         div.setAttribute("class", "box");
@@ -428,8 +432,11 @@ function displayEvents(events, str) {
         a.setAttribute("class", "event-link");
         a.setAttribute("href", "#");
         a.setAttribute("data-id", event.venuedId);
-
         eventListEl.appendChild(div); 
+        
+        // Limit our search results
+        index++;
+        if (index >= limit) return;
     });
 }
 
