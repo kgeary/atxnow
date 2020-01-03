@@ -398,7 +398,7 @@ function displayEvents(events, str) {
     
     events.forEach(function(event) {
         let div = document.createElement("div");
-        div.setAttribute("class", "divider");
+        div.setAttribute("class", "box");
         // h1 - Event Name
         let h1 = document.createElement("h3");
         div.appendChild(h1);
@@ -509,7 +509,7 @@ function displayAlbums(albums) {
     albums.forEach(function (album) {
         let li = document.createElement("li");
         li.textContent = album.name + " (" + album.year + ")";
-        li.setAttribute("class", "tile is-child");
+        li.setAttribute("class", "tile is-child box");
         discListEl.appendChild(li);
     });
 }
