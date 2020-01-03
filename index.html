@@ -7,65 +7,47 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>ATX Now - Your Guide to Shows in Austin</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
-    <link rel="stylesheet" href="assets/css/bulma.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.8.0/css/bulma.min.css">
+    <!-- <link rel="stylesheet" href="assets/css/bulma.css"> -->
     <!-- <link rel="stylesheet" href="assets/css/bulma.min.css"> -->
     <link rel="stylesheet" href="assets/css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.0/axios.js"></script>
+
 </head>
 
 <body>
-    <nav class="level">
-        <!-- Left side -->
-        <div class="level-left">
-            <div class="level-item">
-                <p class="subtitle is-5">
-                    <strong>123</strong> posts
-                </p>
-            </div>
-            <div class="level-item">
-                <div class="field has-addons">
-                    <p class="control">
-                        <input class="input" type="text" placeholder="Find a post">
-                    </p>
-                    <p class="control">
-                        <button class="button is-success">
-                            Search
-                        </button>
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Right side -->
-        <div class="level-right">
-            <p class="level-item"><strong>All</strong></p>
-            <p class="level-item"><a>Published</a></p>
-            <p class="level-item"><a>Drafts</a></p>
-            <p class="level-item"><a>Deleted</a></p>
-            <p class="level-item"><a class="button is-success">New</a></p>
-        </div>
-    </nav>
-    <section class="hero">
+    <!-- Header Section -->
+    <section class="hero is-large has-bg-img">
         <div class="hero-body">
             <div class="container">
-                <h1 class="title">
-                    Project 1 Title
+                <h1 id="ATX-Title" class="title is-1 has-text-centered">
+                    ATX Now
                 </h1>
-                <h2 class="subtitle">
-                    Proect 1 Subtitle
+                <h2 class="subtitle has-text-centered">
+                    Project 1 Subtitle
                 </h2>
             </div>
         </div>
     </section>
 
-    <section class="section">
-        <div class="container">
-            <label for="inputArtist">Artist:</label>
-            <input id="inputArtist" type="text">
-            <button id="btnSearch">Search</button>
-            <div class="box">
+    <section class="section columns level-item has-text-centered">
+        <div id="SearchBox" class="container level column is-narrow">
+
+            <div class="field has-addons">
+                <p class="control">
+                    <input id="findACity" class="input" type="text" placeholder="Find a City">
+                </p>
+                <p class="control">
+                    <button id="btnSearchEl" class="button is-success">
+                        Search
+                    </button>
+                </p>
+            </div>
+
+            <div class="box" id="resultsbox">
                 <h1 id="artistName" class="title"></h1>
                 <img id="artistThumb" class="thumbnail" alt="thumbnail" width="100px">
-                <table class="table is-striped is-bordered">                    
+                <table class="table is-striped is-bordered">
                     <tr>
                         <th>Genre</th>
                         <td id="artistGenre"></td>
