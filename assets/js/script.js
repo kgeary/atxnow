@@ -95,7 +95,7 @@ function getArtistEvents(artist) {
         .then(function(response) {
             console.log("ARTIST ====== DATA HERE");
             console.log(response);
-            let events = parseArtistEvents(response);
+            let events = parseEvents(response);
             displayEvents(events, "events coming up for " + artist.name);
         })
 
@@ -116,8 +116,8 @@ function getAreaEvents() {
 
     axios.get(locationUrl)
         .then(function(response) {
-            console.log("LOC RESP");
-            console.log(response);
+            //console.log("LOC RESP");
+            //console.log(response);
             var locationData = {
                 city: response.data.city,
                 zip: response.data.postal_code,
@@ -134,8 +134,8 @@ function getAreaEvents() {
         })
         .then(function(response) {
             // Parse Location Info
-            console.log("METRO AREAS RECEIVED!!!");
-            console.log(response);
+            //console.log("METRO AREAS RECEIVED!!!");
+            //console.log(response);
             metro_areas = parseMetroAreas(response);
             return metro_areas;
         }).then(function(areas) {
@@ -151,8 +151,8 @@ function getAreaEvents() {
             let events = [];
             values.forEach(function(response) {
                 // TODO Parse Metro Area Response Here
-                console.log(response);
-                events.push(...parseMetroEvents(response));
+                //console.log(response);
+                //events.push(...parseMetroEvents(response));
             });
             return events;
         }).then(function(events) {
@@ -228,8 +228,8 @@ function getArtistData(artist, success, fail) {
             //=====================================================
             console.log("=== All API Calls Good! ===");
             console.log(artistResponse);
-            console.log(discResponse);
-            console.log(topResponse);
+            //console.log(discResponse);
+            //console.log(topResponse);
 
             //=====================================================
             // API Was successful but no artists found
@@ -282,9 +282,9 @@ function getArtistData(artist, success, fail) {
 }
 
 //=====================================================
-// Parse the events for an Artist
+// Parse the events for an Artist or Metro Area
 //=====================================================
-function parseArtistEvents(response) {
+function parseEvents(response) {
     let respEvents = [];
     let events = response.data.resultsPage.results.event;
     if (!events) return respEvents;
@@ -298,32 +298,12 @@ function parseArtistEvents(response) {
             startTime:  event.start.time, 
             venue:      event.venue.displayName,
             venuedId:   event.venue.id,
+            city:       event.location.city,
         });
     });
     return respEvents;
 }
 
-//=====================================================
-// Parse the events for a Metro Area
-//=====================================================
-function parseMetroEvents(response) {
-    let respEvents = [];
-    let events = response.data.resultsPage.results.event;
-    if (!events) return respEvents;
-
-    events.forEach(function (event) {
-        respEvents.push({
-            name:       event.displayName,
-            type:       event.type,
-            uri:        event.uri,
-            startDate:  event.start.date,
-            startTime:  event.start.time, 
-            venue:      event.venue.displayName,
-            venuedId:   event.venue.id,
-        });
-    });
-    return respEvents;
-}
 //=====================================================
 // Parse the API response into an array of Metro Areas
 //=====================================================
@@ -432,7 +412,10 @@ function displayEvents(events, str) {
         // p - Start Date/Time
         let p = document.createElement("p");
         div.appendChild(p);
-        p.textContent = `${event.startDate} ${event.startTime}`;
+        p.textContent = `${event.city}`;
+        let p2 = document.createElement("p");
+        div.appendChild(p2);
+        p2.textContent = `${event.startDate} ${event.startTime}`;
         // a - Venue (TODO: Activate link)
         let a = document.createElement("a");
         div.appendChild(a);
