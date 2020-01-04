@@ -44,7 +44,7 @@ const topHeadEl = document.getElementById("topHead");
 // description - Table heading cell text
 // field - Name of the field in artist object
 //=====================================================================
-const artistParams = [
+const artistTableParams = [
     { description: "Name", field: "name" },
     { description: "From", field: "origin" },
     { description: "Genre", field: "genre" },
@@ -76,7 +76,7 @@ btnSearchEl.addEventListener("click", function () {
     eventListEl.innerHTML = "";
     let artist = escape(inputArtistEl.value.trim());
     if (artist === "") {
-        getAreaEvents(7);
+        getAreaEvents();
     } else {
         getArtistData(artist, displayArtist);
     }
@@ -96,34 +96,9 @@ inputArtistEl.addEventListener("keypress", function (event) {
     }
 });
 
-
 //==============================================================================
 // Helper Functions
 //==============================================================================
-
-//=====================================================================
-// Get Artist Events
-//  Call the API to get Artist Event Data for a given artist
-//  artist = artist object
-//  days = number of days to search. undefined = no max date
-//  page = the results page to get retrieve
-//=====================================================================
-function getArtistEvents(artist, days = DAYS_ARTIST, page = 1) {
-    let artistUrl = "https://api.songkick.com/api/3.0/artists/mbid:";
-    artistUrl += artist.mbid;
-    artistUrl += "/calendar.json?apikey=" + sk + getDateQuery(days) + getPageQuery(page, MAX_QUERY_RESULTS);
-
-    console.log(artistUrl);
-    axios.get(artistUrl)
-        .then(function (response) {
-            console.log("ARTIST DATA HERE", response);
-            let events = parseEvents(response);
-            events.sort(sortFunc);
-            let totalEntries = response.data.resultsPage.totalEntries;
-            displayEvents(events, " of " + totalEntries + " events coming up for " + artist.name);
-        })
-
-}
 
 //=====================================================================
 // Call the API to get the current location
@@ -138,6 +113,21 @@ function getLocationPromise() {
 }
 
 //=====================================================================
+// Get Artist Events
+//  Call the API to get Artist Event Data for a given artist
+//  artist = artist object
+//  days = number of days to search. undefined = no max date
+//  page = the results page to get retrieve
+//=====================================================================
+function getArtistEvents(artist, days = DAYS_ARTIST, page = 1) {
+    let artistUrl = "https://api.songkick.com/api/3.0/artists/mbid:";
+    artistUrl += artist.mbid;
+    artistUrl += "/calendar.json?" + getQuery(days, page, MAX_QUERY_RESULTS);
+    console.log(artistUrl);
+    return axios.get(artistUrl);
+}
+
+//=====================================================================
 // Call the API to get concert Data in the area
 // 1. Get the user location from IP
 // 2. Get the Metro ID's for the current location
@@ -147,7 +137,7 @@ function getLocationPromise() {
 function getAreaEvents(days = DAYS_CURRENT) {
     // 1. API REQUEST - Look up the User Location based off IP Address
     // 2. API REQUEST - Find Metro Areas based off Location Data
-    // 3. API REQUEST - Request Event Info from Each Metro Area
+    // 3. API REQUESTS - Request Event Info from Each Metro Area
 
 
     getLocationPromise()
@@ -179,6 +169,7 @@ function getAreaEvents(days = DAYS_CURRENT) {
         }).then(function (events) {
             // Display the Events on the Page
             displayEvents(events, "events in " + userLocation.city);
+            labelStatusEl.textContent = "";
         })
         .catch(function (error) {
             //======================================================
@@ -190,54 +181,19 @@ function getAreaEvents(days = DAYS_CURRENT) {
 }
 
 //=====================================================================
-// Returns Promises to query Metro Areas for Events
-// areas = array of Metro Area Objects from soundkick
-// days = number of days out to search. leave undefined for no max date
-//=====================================================================
-function buildEventPromiseArray(areas, days, page = 1) {
-    let promises = [];
-
-    // Create promises to get the Events for Each Metro Area
-    // returns the promises array
-    areas.forEach(function (area) {
-        let url = "https://api.songkick.com/api/3.0/metro_areas/" + area.id +
-            "/calendar.json?apikey=" + sk + getDateQuery(days)
-            + getPageQuery(page, MAX_QUERY_RESULTS);
-        promises.push(axios.get(url));
-    })
-    return promises;
-}
-
-//=====================================================================
-// Returns URL to get a list of Metro Areas based on location
-//=====================================================================
-function buildMetroUrl(location) {
-    // Get Location Info
-    let queryUrl = "https://api.songkick.com/api/3.0/search/locations.json?";
-
-    // Use Latitude and Longitude if available else use city name
-    if (location.lat && location.lon) {
-        queryUrl += "location=geo:" + location.lat + "," + location.lon + "&apikey=" + sk;
-    } else {
-        queryUrl += "query=" + location.city.replace(" ", "+") + "&apikey=" + sk;
-    }
-    return queryUrl;
-}
-
-//=====================================================================
 // Call the APIs to get the artist Data
 //=====================================================================
-function getArtistData(artist, success, fail) {
+function getArtistData(strArtist, success, fail) {
     // Fix the input data. 
     // 1. Remove leading and trailing spaces
     // 2. Replace spaces with + for use in query string
-    artist = artist.trim().replace(" ", "+");
+    strArtist = strArtist.trim().replace(" ", "+");
 
     // Create the API Urls
     const base = "https://www.theaudiodb.com/api/v1/json/1";
-    const artistUrl = base + "/search.php?s=" + artist;
-    const discographyUrl = base + "/discography.php?s=" + artist;
-    const topUrl = base + "/track-top10.php?s=" + artist;
+    const artistUrl = base + "/search.php?s=" + strArtist;
+    const discographyUrl = base + "/discography.php?s=" + strArtist;
+    const topUrl = base + "/track-top10.php?s=" + strArtist;
 
     // Use Promise.all to run all get requests in parallel
     // 1. Get the Artist Info 
@@ -269,14 +225,23 @@ function getArtistData(artist, success, fail) {
             }
 
             // Parse the data we need into objects;
-            let artist = parseArtist(artistResponse.data.artists[0]);
+            var artist = parseArtist(artistResponse.data.artists[0]); // Make this var so it can be accessed in then
             artist.albums = parseAlbums(discResponse.data.album);
             artist.tracks = parseTracks(topResponse.data.track);
 
-            getArtistEvents(artist, DAYS_ARTIST);
-
-            // Return the Artist Object to the user provided success handler
-            if (success) success(artist);
+            return getArtistEvents(artist, DAYS_ARTIST);
+        })
+        .then(function (response) {
+            // Parse and Display The Events
+            //console.log("Artist Events", response);
+            let events = parseEvents(response);
+            events.sort(sortFunc);
+            artist.events = events;
+            artist.totalEntries = response.data.resultsPage.totalEntries;
+            return artist;
+        })
+        .then (function(response) {
+            success(artist);
         })
         .catch(function (error) {
             //=====================================================
@@ -309,8 +274,42 @@ function getArtistData(artist, success, fail) {
         });
 }
 
+//=====================================================================
+// Returns Promises to query Metro Areas for Events
+// areas = array of Metro Area Objects from soundkick
+// days = number of days out to search. leave undefined for no max date
+//=====================================================================
+function buildEventPromiseArray(areas, days, page = 1) {
+    let promises = [];
+
+    // Create promises to get the Events for Each Metro Area
+    // returns the promises array
+    areas.forEach(function (area) {
+        let url = "https://api.songkick.com/api/3.0/metro_areas/" + area.id +
+            "/calendar.json?" + getQuery(days, page, MAX_QUERY_RESULTS);
+        promises.push(axios.get(url));
+    })
+    return promises;
+}
+
+//=====================================================================
+// Returns URL to get a list of Metro Areas based on location
+//=====================================================================
+function buildMetroUrl(location) {
+    // Get Location Info
+    let queryUrl = "https://api.songkick.com/api/3.0/search/locations.json?";
+    let sk2 = "&apikey=" + sk;
+    // Use Latitude and Longitude if available else use city name
+    if (location.lat && location.lon) {
+        queryUrl += "location=geo:" + location.lat + "," + location.lon + sk2;
+    } else {
+        queryUrl += "query=" + location.city.replace(" ", "+") + sk2;
+    }
+    return queryUrl;
+}
+
 //=====================================================
-// Parse the events for an Artist or Metro Area
+// Parse the Location Data
 //=====================================================
 function parseLocation(response) {
     var locationData = {
@@ -322,6 +321,9 @@ function parseLocation(response) {
     return locationData;
 }
 
+//=====================================================
+// Parse the events for an Artist or Metro Area
+//=====================================================
 function parseEvents(response) {
     let respEvents = [];
     let events = response.data.resultsPage.results.event;
@@ -526,6 +528,9 @@ function displayArtist(artist) {
     // Display the artist details table
     displayArtistTable(artist);
 
+    // Display concerts
+    displayEvents(artist.events, " of " + artist.totalEntries + " events coming up for " + artist.name);
+
     // Display the album discography list
     displayAlbums(artist.albums);
 
@@ -543,7 +548,7 @@ function displayArtist(artist) {
 //=====================================================================
 function displayArtistTable(artist) {
     // Configure Each parameter in the table
-    artistParams.forEach(function (param) {
+    artistTableParams.forEach(function (param) {
         let row = document.createElement("tr");
         let col1 = document.createElement("th");
         col1.textContent = param.description;
@@ -566,10 +571,6 @@ function displayArtistTable(artist) {
     let imgRow = document.createElement("tr");
     let imgCol = document.createElement("td");
     imgCol.setAttribute("colspan", "2");
-    //let img = document.createElement("img");
-    //img.setAttribute("src", artist.logo);
-    //img.setAttribute("alt", artist.name + " logo");
-    //imgCol.appendChild(img);
     imgRow.appendChild(imgCol);
     artistTableEl.appendChild(imgRow);
 }
@@ -630,6 +631,13 @@ function getYouTube(src) {
         src = src.replace("www.youtube.com/", "www.youtube.com/embed/");
     }
     return '<iframe src="' + src + '" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+}
+
+//====================================================================
+// Return the full query string
+//====================================================================
+function getQuery(days, page, perPage) {
+    return "apikey=" + sk + getDateQuery(days) + getPageQuery(page, perPage);
 }
 
 // ===================================================================
@@ -713,9 +721,9 @@ function onError(error) {
     labelStatusEl.classList.add("is-danger");
 }
 
-////////////////////////////////////
-// MAIN - Code that runs at startup
-////////////////////////////////////
+/**************************************/
+/* MAIN - Code that runs at startup   */
+/**************************************/
 
 // Get Concert Data for the current location
 getAreaEvents();
