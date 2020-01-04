@@ -17,6 +17,9 @@ main {
     border-radius: 20px;
 }
 
+#pageDiv {
+    display: none;
+}
 
 .divider {
     margin-top: 3rem;
@@ -28,23 +31,19 @@ iframe {
 }
 
 @media only screen and (max-width: 676px) {
-    #artistTable th,
-    #artistTable td {
+    #artistTable th, #artistTable td {
         /* Make sure the artist table stacks vertically on smaller screens */
         width: 100%;
         display: block;
         max-height: 200px;
     }
-
     #artistTable th {
         background-color: #444;
         color: whitesmoke;
     }
-
     #artistTable td {
         margin-bottom: 1rem;
     }
-
     iframe {
         width: 100%;
     }

@@ -3,7 +3,7 @@
 //==============================================================================
 const MAX_METROS = 20;          // How many metro areas to include
 const MAX_DISPLAY_RESULTS = 25; // How Many Results to display at once.
-const MAX_QUERY_RESULTS = 50;   // How Many Results to request at once.
+const MAX_QUERY_RESULTS = 25;   // How Many Results to request at once.
 const DAYS_CURRENT = 7;         // How many days to show for current events
 const DAYS_ARTIST = 30;         // How many days to show for artist events
 const KM_TO_MI = 0.6213711922;
@@ -29,6 +29,12 @@ const thumbEl = document.getElementById("artistThumb");
 // Events List
 const eventListEl = document.getElementById("eventList");
 const eventHeadEl = document.getElementById("eventHead");
+
+// Pagination
+const pageDivEl = document.getElementById("pageDiv");
+const pageNumberEl = document.getElementById("pageNumber");
+const pageNextEl = document.getElementById("pageNext");
+const pagePrevEl = document.getElementById("pagePrev");
 
 // Discography
 const discListEl = document.getElementById("discList");
@@ -57,7 +63,8 @@ const artistTableParams = [
 const sk = "jNVqoANxyxv3dO3F";
 let userLocation;
 let sortFunc = sortDateDistance;
-
+let currentPage = 1;
+let lastSearch = "city";
 //==============================================================================
 // Event Listeners
 //==============================================================================
@@ -74,16 +81,20 @@ btnSearchEl.addEventListener("click", function () {
     // Hide the old info
     // Clear the input
     eventListEl.innerHTML = "";
-    let artist = escape(inputArtistEl.value.trim());
-    if (artist === "") {
+    let strArtist = escape(inputArtistEl.value.trim());
+    if (strArtist === "") {
         getAreaEvents();
+        lastSearch = "city";
     } else {
-        getArtistData(artist, displayArtist);
+        getArtistData(strArtist, displayArtist);
+        lastSearch = strArtist;
     }
     labelStatusEl.classList.remove("is-danger");
     labelStatusEl.textContent = "Loading...";
     artistInfoEl.setAttribute("style", "display: none;");
     inputArtistEl.value = "";
+    currentPage = 1;
+    pageNumberEl.textContent = "Page " + currentPage;
 });
 
 //=====================================================================
@@ -96,9 +107,37 @@ inputArtistEl.addEventListener("keypress", function (event) {
     }
 });
 
+pageNextEl.addEventListener("click", function (event) {
+    event.preventDefault();  
+    currentPage++;
+    loadPage();
+});
+
+pagePrevEl.addEventListener("click", function (event) {
+    event.preventDefault();
+    currentPage--;
+    loadPage();
+});
+
 //==============================================================================
 // Helper Functions
 //==============================================================================
+function loadPage() {
+    if (currentPage < 0) {
+        currentPage = 0;
+        return;
+    }
+
+    eventListEl.innerHTML = "";
+
+    if (lastSearch == "city") {
+        getAreaEvents(DAYS_CURRENT);
+    } else {
+        getArtistData(lastSearch, displayArtist);
+    }
+    pageNumberEl.textContent = "Page " + currentPage;
+    location.href = "#topEvent";
+}
 
 //=====================================================================
 // Call the API to get the current location
@@ -139,7 +178,6 @@ function getAreaEvents(days = DAYS_CURRENT) {
     // 2. API REQUEST - Find Metro Areas based off Location Data
     // 3. API REQUESTS - Request Event Info from Each Metro Area
 
-
     getLocationPromise()
         .then(function (locationData) {
             // Find Metro Areas based off the location
@@ -153,7 +191,7 @@ function getAreaEvents(days = DAYS_CURRENT) {
         }).then(function (areas) {
             // Get an Array of Promises to Query Metro Areas
             // Wait for all promises to return
-            let promises = buildEventPromiseArray(areas, days);
+            let promises = buildEventPromiseArray(areas, days, currentPage);
             return Promise.all(promises); // Return Status once all promises have completed.
         }).then(function (values) {
             // Get an Array of Events in All the Metro Areas
@@ -165,6 +203,8 @@ function getAreaEvents(days = DAYS_CURRENT) {
             });
             // Sort the Array using the current sort strategy
             events.sort(sortFunc);
+            // Hide/Show Pagination as needed
+            togglePaging(events);
             return events;
         }).then(function (events) {
             // Display the Events on the Page
@@ -225,16 +265,17 @@ function getArtistData(strArtist, success, fail) {
             }
 
             // Parse the data we need into objects;
-            var artist = parseArtist(artistResponse.data.artists[0]); // Make this var so it can be accessed in then
+            var artist = parseArtist(artistResponse.data.artists[0]); // Keep this var so it can be accessed in then
             artist.albums = parseAlbums(discResponse.data.album);
             artist.tracks = parseTracks(topResponse.data.track);
 
-            return getArtistEvents(artist, DAYS_ARTIST);
+            return getArtistEvents(artist, DAYS_ARTIST, currentPage);
         })
         .then(function (response) {
             // Parse and Display The Events
             //console.log("Artist Events", response);
             let events = parseEvents(response);
+            togglePaging(events);
             events.sort(sortFunc);
             artist.events = events;
             artist.totalEntries = response.data.resultsPage.totalEntries;
@@ -272,6 +313,17 @@ function getArtistData(strArtist, success, fail) {
                 fail(error);
             }
         });
+}
+
+function togglePaging(events) {
+    console.log("length", events.length);
+    console.log("total", events.total);
+    console.log("currentPage", currentPage);
+    let isDisplayed = (events.length !== 0 && events.length !== events.total);
+    console.log("isDisplayed", isDisplayed);
+    
+    let displayValue = isDisplayed ? "display: flex;" : "display: none;";
+     pageDivEl.setAttribute("style", displayValue);
 }
 
 //=====================================================================
