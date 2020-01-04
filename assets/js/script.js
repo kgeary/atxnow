@@ -221,9 +221,9 @@ function getAreaEvents(days = DAYS_CURRENT) {
 }
 
 //=====================================================================
-// Call the APIs to get the artist Data
+// Call the APIs to get the artist Data from Audio DB and Ticketmaster
 //=====================================================================
-function getArtistData(strArtist, success, fail) {
+function getArtistData(strArtist) {
     // Fix the input data. 
     // 1. Remove leading and trailing spaces
     // 2. Replace spaces with + for use in query string
@@ -282,7 +282,8 @@ function getArtistData(strArtist, success, fail) {
             return artist;
         })
         .then (function(response) {
-            success(artist);
+            // Display the Artist on the page
+            displayArtist(response);
         })
         .catch(function (error) {
             //=====================================================
@@ -303,14 +304,6 @@ function getArtistData(strArtist, success, fail) {
             } else {
                 console.log("Unknown Error");
                 console.log(error);
-            }
-
-            //======================================================
-            // If it exists, call the user specified fail callback
-            //======================================================
-            if (fail) {
-                console.log("Passing error to user fail function");
-                fail(error);
             }
         });
 }
@@ -496,14 +489,19 @@ function parseTracks(topTracks) {
 // Update the HTML to display event info
 //=====================================================================
 function displayEvents(events, str, limit = MAX_DISPLAY_RESULTS) {
-    let displayStr = (limit < events.length) ? limit + " of " : "";
+    let displayStr = (limit < events.length) ? ((currentPage-1) * limit)+1 + "-" + currentPage * limit + " of " : "";
     displayStr += events.length + " " + str;
+    const displayNewDayHeading = true;
 
     // Set the Event Section Heading
     eventHeadEl.textContent = displayStr;
     // Clear the current Event List from HTML
     eventListEl.innerHTML = "";
+    // Keep track of iteration for limit
     let index = 0;
+    // Keep track of date for date heading
+    let lastOutputTime = "";
+    
     // For Each Event in the Array - Create Elements and add them to the page
     events.forEach(function (event) {
         if (index++ >= limit) return;
@@ -537,14 +535,12 @@ function displayEvents(events, str, limit = MAX_DISPLAY_RESULTS) {
         let p1 = document.createElement("p");
         div.appendChild(p1);
         p1.textContent = event.city;
-
         // p2 - Start Date/Time Formatted
         let p2 = document.createElement("p");
         div.appendChild(p2);
         let inputMoment = moment(event.startDate + event.startTime, "YYYYMMDDHHmm");
         let outputTime = inputMoment.format('dddd MMMM Do @ h:mm a');
         p2.textContent = outputTime;
-
         // p3 - Distance to Event
         let p3 = document.createElement("p");
         div.appendChild(p3);
@@ -557,6 +553,20 @@ function displayEvents(events, str, limit = MAX_DISPLAY_RESULTS) {
         a.setAttribute("target", "_blank");
         a.textContent = event.venue;
 
+        // if displayNewDayHeading is enabled...
+        // Add a header div for each new day in the listings
+        if (displayNewDayHeading && lastOutputTime !== event.startDate) {
+            let dayMarker = document.createElement("div");
+            eventListEl.appendChild(dayMarker);
+            dayMarker.classList.add("dayMarker");
+            let dayHeader = document.createElement("h1");
+            dayMarker.appendChild(dayHeader);
+            dayHeader.classList.add("title");
+            console.log("OT", outputTime);
+            dayHeader.textContent = moment(event.startDate, "YYYY-MM-DD").format("dddd MMMM Do");
+        }
+        lastOutputTime = event.startDate;
+        
         eventListEl.appendChild(div);
     });
 }
@@ -569,23 +579,18 @@ function displayArtist(artist) {
 
     // Clear Out the old table
     artistTableEl.innerHTML = "";
-
     // Set the Artist Name
     artistNameEl.textContent = artist.name;
-
     // Set the thumbnail Image for the artist
     thumbEl.setAttribute("src", artist.thumbnail);
     thumbEl.setAttribute("alt", artist.name);
 
     // Display the artist details table
     displayArtistTable(artist);
-
     // Display concerts
     displayEvents(artist.events, " of " + artist.totalEntries + " events coming up for " + artist.name);
-
     // Display the album discography list
     displayAlbums(artist.albums);
-
     // Display the top tracks
     displayTracks(artist.tracks);
 
