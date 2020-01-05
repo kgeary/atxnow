@@ -2,7 +2,7 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    background-image: linear-gradient(red, yellow);
+    background-image: linear-gradient(to bottom right, #871f20, #ee9f42);
     font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
 }
 
