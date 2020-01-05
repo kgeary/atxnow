@@ -2,6 +2,19 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    background-image: linear-gradient(red, yellow);
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+}
+
+#ATX-Title {
+    color: whitesmoke;
+}
+
+.has-bg-img { 
+    background: url("../images/people-at-concert.jpg")center center; 
+    background-size:cover; 
+    margin-bottom: 20px;
+    border-radius: 5px;
 }
 
 main {
