@@ -2,7 +2,7 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    background-image: linear-gradient(to bottom right, #871f20, #ee9f42);
+    background-image: linear-gradient(to bottom right, #9c1c1f, #f19429);
     font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
 }
 
@@ -24,6 +24,10 @@ main {
 #artistInfo {
     display: none;
     margin-top: 3rem;
+}
+
+.control{
+    box-shadow:5px 5px 5px rgba(128, 128, 128, 0.596)
 }
 
 #artistTable td {
