@@ -2,12 +2,12 @@
 // CONSTANTS
 //==============================================================================
 const MAX_METROS = 20;          // How many metro areas to include
-const MAX_DISPLAY_RESULTS = 25; // How Many Results to display at once.
-const MAX_QUERY_RESULTS = 25;   // How Many Results to request at once.
+const MAX_DISPLAY_RESULTS = 10; // How Many Results to display at once.
+const MAX_QUERY_RESULTS = 50;   // How Many Results to request at once.
 const DAYS_CURRENT = 7;         // How many days to show for current events
-const DAYS_ARTIST = 30;         // How many days to show for artist events
-const KM_TO_MI = 0.6213711922;
-const MAX_DISTANCE_LOCAL = 30;
+const DAYS_ARTIST = 365;        // How many days to show for artist events
+const KM_TO_MI = 0.6213711922;  // KM to Miles conversion factor
+const MAX_DISTANCE_LOCAL = 15;  // MAX Distance in Miles to be considered local
 
 //==============================================================================
 // HTML Elements
@@ -61,10 +61,21 @@ const artistTableParams = [
     // { description: "Biography", field: "bio"}, // Bio causes some styling issues due to the length
 ];
 const sk = "jNVqoANxyxv3dO3F";
-let userLocation;
-let sortFunc = sortDateDistance;
-let currentPage = 1;
-let lastSearch = "city";
+//=====================================================================
+// User Settings
+//=====================================================================
+let user = {
+    location: undefined,
+    artist: undefined,
+    sortFunc: sortDateDistance,
+    page: 1,
+    lastSearch: "city",
+    events: {
+                artist: undefined,
+                area: undefined,
+            }
+}
+
 //==============================================================================
 // Event Listeners
 //==============================================================================
@@ -81,20 +92,24 @@ btnSearchEl.addEventListener("click", function () {
     // Hide the old info
     // Clear the input
     eventListEl.innerHTML = "";
+    eventHeadEl.textContent = "";
+    discListEl.innerHTML = "";
+    topListEl.innerHTML = "";
     let strArtist = escape(inputArtistEl.value.trim());
     if (strArtist === "") {
         getAreaEvents();
-        lastSearch = "city";
+        user.lastSearch = "city";
     } else {
         getArtistData(strArtist, displayArtist);
-        lastSearch = strArtist;
+        user.lastSearch = strArtist;
     }
     labelStatusEl.classList.remove("is-danger");
     labelStatusEl.textContent = "Loading...";
     artistInfoEl.setAttribute("style", "display: none;");
-    inputArtistEl.value = "";
-    currentPage = 1;
-    pageNumberEl.textContent = "Page " + currentPage;
+    // Paging
+    user.page = 1;
+    pageNumberEl.textContent = "Page " + user.page;
+    updatePagingVisibility();
 });
 
 //=====================================================================
@@ -107,35 +122,79 @@ inputArtistEl.addEventListener("keypress", function (event) {
     }
 });
 
+//=====================================================================
+// Next Button Click
+//=====================================================================
 pageNextEl.addEventListener("click", function (event) {
     event.preventDefault();  
-    currentPage++;
+    user.page++;
     loadPage();
 });
 
+//=====================================================================
+// Previous Button Click
+//=====================================================================
 pagePrevEl.addEventListener("click", function (event) {
     event.preventDefault();
-    currentPage--;
+    user.page--;
     loadPage();
 });
 
 //==============================================================================
 // Helper Functions
 //==============================================================================
+//=====================================================================
+// Load the next page of results;
+//=====================================================================
 function loadPage() {
-    if (currentPage < 0) {
-        currentPage = 0;
+    if (user.page < 1) {
+        user.page = 1;
         return;
     }
 
     eventListEl.innerHTML = "";
 
-    if (lastSearch == "city") {
-        getAreaEvents(DAYS_CURRENT);
+    if (user.lastSearch === "city") {
+        if ((user.page-1) * MAX_DISPLAY_RESULTS < user.events.area.length) {
+            let nextResults = user.events.area.slice((user.page-1) * MAX_DISPLAY_RESULTS);
+            displayEvents(nextResults, "Results");                      
+            if ((user.page) * MAX_DISPLAY_RESULTS < user.events.area.length) {
+                pageNextEl.setAttribute("style", "visibility: visible;");
+            }
+            else {
+                pageNextEl.setAttribute("style", "visibility: hidden;"); 
+            }
+        
+            if (user.page === 1) {
+                pagePrevEl.setAttribute("style", "visibility: hidden;");
+            } else {
+                pagePrevEl.setAttribute("style", "visibility: visible;");   
+            }
+        } else {
+            // Do nothing - for current results
+        }
     } else {
-        getArtistData(lastSearch, displayArtist);
+        if ((user.page-1) * MAX_DISPLAY_RESULTS < user.events.artist.length) {
+            let nextResults = user.events.artist.slice((user.page-1) * MAX_DISPLAY_RESULTS);
+            displayEvents(nextResults, "Results");
+            if ((user.page) * MAX_DISPLAY_RESULTS < user.events.artist.length) {
+                pageNextEl.setAttribute("style", "visibility: visible;");
+            }
+            else {
+                pageNextEl.setAttribute("style", "visibiity: hidden;"); 
+            }
+        
+            if (user.page === 1) {
+                pagePrevEl.setAttribute("style", "visibility: hidden;");
+            } else {
+                pagePrevEl.setAttribute("style", "visibility: visible;");   
+            }
+        } else {
+            //getArtistData(user.lastSearch, displayArtist);
+        }
     }
-    pageNumberEl.textContent = "Page " + currentPage;
+
+    pageNumberEl.textContent = "Page " + user.page;
     location.href = "#topEvent";
 }
 
@@ -144,21 +203,23 @@ function loadPage() {
 //=====================================================================
 function getLocationPromise() {
     const locationUrl = "https://json.geoiplookup.io/";
+
+    if (user.location) return Promise.resolve(user.location); // cache the user location
+
     return axios.get(locationUrl)
         .then(function (response) {
-            userLocation = parseLocation(response);
-            return userLocation;
+            user.location = parseLocation(response);
+            return user.location;
         });
 }
 
 //=====================================================================
-// Get Artist Events
-//  Call the API to get Artist Event Data for a given artist
+// Get a Promise to retriev the Events for an Artist
 //  artist = artist object
 //  days = number of days to search. undefined = no max date
 //  page = the results page to get retrieve
 //=====================================================================
-function getArtistEvents(artist, days = DAYS_ARTIST, page = 1) {
+function getArtistEventsPromise(artist, days = DAYS_ARTIST, page = 1) {
     let artistUrl = "https://api.songkick.com/api/3.0/artists/mbid:";
     artistUrl += artist.mbid;
     artistUrl += "/calendar.json?" + getQuery(days, page, MAX_QUERY_RESULTS);
@@ -191,7 +252,7 @@ function getAreaEvents(days = DAYS_CURRENT) {
         }).then(function (areas) {
             // Get an Array of Promises to Query Metro Areas
             // Wait for all promises to return
-            let promises = buildEventPromiseArray(areas, days, currentPage);
+            let promises = buildEventPromiseArray(areas, days, user.page);
             return Promise.all(promises); // Return Status once all promises have completed.
         }).then(function (values) {
             // Get an Array of Events in All the Metro Areas
@@ -202,14 +263,17 @@ function getAreaEvents(days = DAYS_CURRENT) {
                 events.push(...parseEvents(response));
             });
             // Sort the Array using the current sort strategy
-            events.sort(sortFunc);
+            events.sort(user.sortFunc);
             // Hide/Show Pagination as needed
-            togglePaging(events);
+            updatePagingVisibility(events);
             return events;
         }).then(function (events) {
-            // Display the Events on the Page
-            displayEvents(events, "events in " + userLocation.city);
+            // Cache the area events
+            user.events.area = events;
             labelStatusEl.textContent = "";
+            // Display the Events on the Page
+            displayEvents(events, "events in " + user.location.city);
+                
         })
         .catch(function (error) {
             //======================================================
@@ -252,7 +316,7 @@ function getArtistData(strArtist) {
             // DEBUGGING - Print the Response Objects
             //=====================================================
             console.log("=== All API Calls Good! ===");
-            console.log(artistResponse);
+            //console.log(artistResponse);
             //console.log(discResponse);
             //console.log(topResponse);
 
@@ -268,22 +332,24 @@ function getArtistData(strArtist) {
             var artist = parseArtist(artistResponse.data.artists[0]); // Keep this var so it can be accessed in then
             artist.albums = parseAlbums(discResponse.data.album);
             artist.tracks = parseTracks(topResponse.data.track);
-
-            return getArtistEvents(artist, DAYS_ARTIST, currentPage);
+            return getArtistEventsPromise(artist, DAYS_ARTIST, user.page);
         })
         .then(function (response) {
             // Parse and Display The Events
             //console.log("Artist Events", response);
             let events = parseEvents(response);
-            togglePaging(events);
-            events.sort(sortFunc);
+            updatePagingVisibility(events);
+            events.sort(user.sortFunc);
             artist.events = events;
-            artist.totalEntries = response.data.resultsPage.totalEntries;
+            artist.total = response.data.resultsPage.totalEntries;
+            user.artist = artist;
             return artist;
         })
         .then (function(response) {
             // Display the Artist on the page
             displayArtist(response);
+            // Clear the user input
+            inputArtistEl.value = "";
         })
         .catch(function (error) {
             //=====================================================
@@ -308,15 +374,27 @@ function getArtistData(strArtist) {
         });
 }
 
-function togglePaging(events) {
-    console.log("length", events.length);
-    console.log("total", events.total);
-    console.log("currentPage", currentPage);
-    let isDisplayed = (events.length !== 0 && events.length !== events.total);
-    console.log("isDisplayed", isDisplayed);
+//=====================================================================
+// Update the visibility of paging elements
+//=====================================================================
+function updatePagingVisibility(events) {
+    //console.log("length", events.length);
+    //console.log("total", events.total);
+    //console.log("currentPage", user.page);
+    let isDisplayed = (events && events.length !== 0 && events.length !== events.total);
+    console.log("Paging isDisplayed", isDisplayed);
     
-    let displayValue = isDisplayed ? "display: flex;" : "display: none;";
-     pageDivEl.setAttribute("style", displayValue);
+    let displayValue = isDisplayed ? "flex;" : "none;";
+    pageDivEl.setAttribute("style", "display: " + displayValue + ";");
+
+    if (isDisplayed) {
+        // Set the Visibility of Next and Prev Buttons based on Event List size and Current Page
+        pageNumberEl.textContent = "Page " + user.page;
+        let strVisNext = (events.length > MAX_DISPLAY_RESULTS) ? "visible" : "hidden";
+        let strVisPrev = (user.page !== 1) ? "visible" : "hidden";
+        pageNextEl.setAttribute("style", "visibility: " + strVisNext + ";");
+        pagePrevEl.setAttribute("style", "visibility: " + strVisPrev + ";");
+    }
 }
 
 //=====================================================================
@@ -389,7 +467,7 @@ function parseEvents(response) {
             lat: parseFloat(evt.location.lat),
             lon: parseFloat(evt.location.lng),
             total: evt.total,
-            distance: distance(userLocation.lat, userLocation.lon,
+            distance: distance(user.location.lat, user.location.lon,
                 evt.location.lat, evt.location.lng)
         });
     });
@@ -489,7 +567,7 @@ function parseTracks(topTracks) {
 // Update the HTML to display event info
 //=====================================================================
 function displayEvents(events, str, limit = MAX_DISPLAY_RESULTS) {
-    let displayStr = (limit < events.length) ? ((currentPage-1) * limit)+1 + "-" + currentPage * limit + " of " : "";
+    let displayStr = (limit < events.length) ? ((user.page-1) * limit)+1 + "-" + user.page * limit + " of " : "";
     displayStr += events.length + " " + str;
     const displayNewDayHeading = true;
 
@@ -587,8 +665,10 @@ function displayArtist(artist) {
 
     // Display the artist details table
     displayArtistTable(artist);
+    // Cache the artist
+    user.events.artist = artist.events;
     // Display concerts
-    displayEvents(artist.events, " of " + artist.totalEntries + " events coming up for " + artist.name);
+    displayEvents(artist.events, " of " + artist.total + " events coming up for " + artist.name);
     // Display the album discography list
     displayAlbums(artist.albums);
     // Display the top tracks
