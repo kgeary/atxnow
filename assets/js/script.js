@@ -404,7 +404,7 @@ function updatePaging(events) {
     //console.log("length", events.length);
     //console.log("total", events.total);
     //console.log("currentPage", user.page);
-    let isDisplayed = (events && events.length !== 0 && events.length > MAX_DISPLAY_RESULTS);
+    let isDisplayed = (events && events.length > MAX_DISPLAY_RESULTS);
     //console.log("Paging isDisplayed", isDisplayed);
     //console.log("# EVENTS", event.length);
     let displayValue = isDisplayed ? "flex;" : "none;";
