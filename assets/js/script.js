@@ -178,12 +178,46 @@ function loadPage() {
     }
     
     if ((user.page - 1) * MAX_DISPLAY_RESULTS < events.length) {
-        displayEvents(events, "Some more results");
+        displayEvents(events, getResultStr());
     } else {
         // Don't do anything if requesting an invalid page
     }
 
     location.href = "#topEvent";
+}
+
+//=====================================================================
+// Get a printable result string
+//=====================================================================
+function getResultStr() {
+    let page = user.page;
+    let first = ((page - 1) * MAX_DISPLAY_RESULTS) + 1;
+    let last = page * MAX_DISPLAY_RESULTS;
+    let noun;
+    let total;
+    let result;
+
+    if (user.lastSearch === "city") {
+        // LOCATION SEARCH
+        total = user.events.area.length;
+        noun = user.location.city;
+    } else {
+        // ARTIST
+        total = user.events.artist.length;
+        noun = user.artist.name;
+    }
+
+    if (total === 0) {
+        result = `No Event Results for ${noun}`;
+    } else if (total === 1) {
+        result = `Results for ${noun}: ${total} event`;
+    } else if (total < MAX_DISPLAY_RESULTS) {
+        result = `Results for ${noun}: ${total} events`;
+    } else {
+        result = `Results for ${noun}: ${first} - ${last} of ${total} events`;
+    }
+    return result;
+        
 }
 
 //=====================================================================
@@ -263,7 +297,7 @@ function getAreaEvents(days = DAYS_CURRENT) {
             user.events.area = events;
             labelStatusEl.textContent = "";
             // Display the Events on the Page
-            displayEvents(events, events.length + " events in " + user.location.city);
+            displayEvents(events, getResultStr());
         })
         .catch(function (error) {
             //======================================================
@@ -712,7 +746,7 @@ function displayArtist(artist) {
     // Cache the artist
     user.events.artist = artist.events;
     // Display concerts
-    displayEvents(artist.events, " of " + artist.total + " events coming up for " + artist.name);
+    displayEvents(artist.events, getResultStr());
     // Display the album discography list
     displayAlbums(artist.albums);
     // Display the top tracks
