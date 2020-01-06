@@ -10,9 +10,9 @@ A guide to events happening in the Austin Area and with your favorite artists. P
 local concert listings or allows the user to search for a specific artist to see info and concert listings.
 
 ## User Story
-As a person who likes live music, I want to see my options for live music in the area I will be, so that I can go to live music in town.
-As a person who likes music, I want to see information about my favorite artists and when they are coming to town.
-As a person who wants to go to a concert, I want to buy tickets to shows.
+* As a person who likes live music, I want to see my options for live music in the area I will be, so that I can go to live music in town.  
+* As a person who likes music, I want to see information about my favorite artists and when they are coming to town.  
+* As a person who wants to go to a concert, I want to buy tickets to shows.  
 
 ## Wirefame
 Startup   
