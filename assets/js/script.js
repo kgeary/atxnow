@@ -32,7 +32,13 @@ const eventHeadEl = document.getElementById("eventHead");
 
 // Pagination
 const pageDivEl = document.getElementById("pageDiv");
-const pageNumberEl = document.getElementById("pageNumber");
+const pageListEl = document.getElementById("pageList");
+const pageFirstEl = document.getElementById("pageFirst");
+const page1El = document.getElementById("page1");
+const page2El = document.getElementById("page2");
+const page3El = document.getElementById("page3");
+const pageTotalEl = document.getElementById("pageTotal");
+
 const pageNextEl = document.getElementById("pageNext");
 const pagePrevEl = document.getElementById("pagePrev");
 
@@ -71,14 +77,24 @@ let user = {
     page: 1,
     lastSearch: "city",
     events: {
-                artist: undefined,
-                area: undefined,
-            }
+        artist: undefined,
+        area: undefined,
+    }
 }
 
 //==============================================================================
 // Event Listeners
 //==============================================================================
+//=====================================================================
+// Page Link Click Handler
+//=====================================================================
+pageListEl.addEventListener("click", function(event) {
+    if (event.target.matches(".pagination-link")) {
+        let link = event.target;
+        user.page = link.getAttribute("data-page");
+        loadPage();
+    }
+});
 
 //=====================================================================
 // Search Button Click Handler
@@ -106,10 +122,10 @@ btnSearchEl.addEventListener("click", function () {
     labelStatusEl.classList.remove("is-danger");
     labelStatusEl.textContent = "Loading...";
     artistInfoEl.setAttribute("style", "display: none;");
-    // Paging
+    // Initialize Paging, Hide the paging until needed
     user.page = 1;
-    pageNumberEl.textContent = "Page " + user.page;
-    updatePagingVisibility();
+    pageDivEl.setAttribute("style", "display: none;");
+
 });
 
 //=====================================================================
@@ -126,7 +142,7 @@ inputArtistEl.addEventListener("keypress", function (event) {
 // Next Button Click
 //=====================================================================
 pageNextEl.addEventListener("click", function (event) {
-    event.preventDefault();  
+    event.preventDefault();
     user.page++;
     loadPage();
 });
@@ -152,49 +168,21 @@ function loadPage() {
         return;
     }
 
+    let events;
     eventListEl.innerHTML = "";
 
     if (user.lastSearch === "city") {
-        if ((user.page-1) * MAX_DISPLAY_RESULTS < user.events.area.length) {
-            let nextResults = user.events.area.slice((user.page-1) * MAX_DISPLAY_RESULTS);
-            displayEvents(nextResults, "Results");                      
-            if ((user.page) * MAX_DISPLAY_RESULTS < user.events.area.length) {
-                pageNextEl.setAttribute("style", "visibility: visible;");
-            }
-            else {
-                pageNextEl.setAttribute("style", "visibility: hidden;"); 
-            }
-        
-            if (user.page === 1) {
-                pagePrevEl.setAttribute("style", "visibility: hidden;");
-            } else {
-                pagePrevEl.setAttribute("style", "visibility: visible;");   
-            }
-        } else {
-            // Do nothing - for current results
-        }
+        events = user.events.area;   
     } else {
-        if ((user.page-1) * MAX_DISPLAY_RESULTS < user.events.artist.length) {
-            let nextResults = user.events.artist.slice((user.page-1) * MAX_DISPLAY_RESULTS);
-            displayEvents(nextResults, "Results");
-            if ((user.page) * MAX_DISPLAY_RESULTS < user.events.artist.length) {
-                pageNextEl.setAttribute("style", "visibility: visible;");
-            }
-            else {
-                pageNextEl.setAttribute("style", "visibiity: hidden;"); 
-            }
-        
-            if (user.page === 1) {
-                pagePrevEl.setAttribute("style", "visibility: hidden;");
-            } else {
-                pagePrevEl.setAttribute("style", "visibility: visible;");   
-            }
-        } else {
-            //getArtistData(user.lastSearch, displayArtist);
-        }
+        events = user.events.artist;
+    }
+    
+    if ((user.page - 1) * MAX_DISPLAY_RESULTS < events.length) {
+        displayEvents(events, "Some more results");
+    } else {
+        // Don't do anything if requesting an invalid page
     }
 
-    pageNumberEl.textContent = "Page " + user.page;
     location.href = "#topEvent";
 }
 
@@ -264,16 +252,18 @@ function getAreaEvents(days = DAYS_CURRENT) {
             });
             // Sort the Array using the current sort strategy
             events.sort(user.sortFunc);
+            // Filter the array of duplicate events
+            events = events.filter(function(value, index, arr) {
+                return (index === arr.findIndex(i => i.id === value.id));
+            });
             // Hide/Show Pagination as needed
-            updatePagingVisibility(events);
             return events;
         }).then(function (events) {
             // Cache the area events
             user.events.area = events;
             labelStatusEl.textContent = "";
             // Display the Events on the Page
-            displayEvents(events, "events in " + user.location.city);
-                
+            displayEvents(events, events.length + " events in " + user.location.city);
         })
         .catch(function (error) {
             //======================================================
@@ -338,14 +328,13 @@ function getArtistData(strArtist) {
             // Parse and Display The Events
             //console.log("Artist Events", response);
             let events = parseEvents(response);
-            updatePagingVisibility(events);
             events.sort(user.sortFunc);
             artist.events = events;
             artist.total = response.data.resultsPage.totalEntries;
             user.artist = artist;
             return artist;
         })
-        .then (function(response) {
+        .then(function (response) {
             // Display the Artist on the page
             displayArtist(response);
             // Clear the user input
@@ -377,23 +366,79 @@ function getArtistData(strArtist) {
 //=====================================================================
 // Update the visibility of paging elements
 //=====================================================================
-function updatePagingVisibility(events) {
+function updatePaging(events) {
     //console.log("length", events.length);
     //console.log("total", events.total);
     //console.log("currentPage", user.page);
-    let isDisplayed = (events && events.length !== 0 && events.length !== events.total);
-    console.log("Paging isDisplayed", isDisplayed);
-    
+    let isDisplayed = (events && events.length !== 0 && events.length > MAX_DISPLAY_RESULTS);
+    //console.log("Paging isDisplayed", isDisplayed);
+    //console.log("# EVENTS", event.length);
     let displayValue = isDisplayed ? "flex;" : "none;";
     pageDivEl.setAttribute("style", "display: " + displayValue + ";");
 
     if (isDisplayed) {
         // Set the Visibility of Next and Prev Buttons based on Event List size and Current Page
-        pageNumberEl.textContent = "Page " + user.page;
-        let strVisNext = (events.length > MAX_DISPLAY_RESULTS) ? "visible" : "hidden";
-        let strVisPrev = (user.page !== 1) ? "visible" : "hidden";
-        pageNextEl.setAttribute("style", "visibility: " + strVisNext + ";");
-        pagePrevEl.setAttribute("style", "visibility: " + strVisPrev + ";");
+        let isNextEnabled = (user.page * MAX_DISPLAY_RESULTS < events.length);
+        let isPrevEnabled = (user.page !== 1);
+        if (isNextEnabled) {
+            pageNextEl.removeAttribute("disabled", "");
+            pageNextEl.setAttribute("enabled", "");
+        } else {
+            pageNextEl.setAttribute("disabled", "");
+            pageNextEl.removeAttribute("enabled" , "");
+        }
+
+        if (isPrevEnabled) {
+            pagePrevEl.removeAttribute("disabled", "");
+            pagePrevEl.setAttribute("enabled", "");
+        }   else {
+            pagePrevEl.setAttribute("disabled", "");
+            pagePrevEl.removeAttribute("enabled", "");
+        }
+        
+        // Set the 1st Page
+        pageFirstEl.setAttribute("data-page", 1);
+        pageFirstEl.textContent = 1;
+
+        // Set the Last Page
+        let lastPageId = Math.ceil(events.length/MAX_DISPLAY_RESULTS);
+        pageTotalEl.setAttribute("data-page", lastPageId);
+        pageTotalEl.textContent = lastPageId;
+        
+        // Set the Middle Pages
+        let pages = [];
+        let upage = parseInt(user.page);
+        if (lastPageId === 1) pages = [1,undefined,undefined];
+        if (lastPageId === 2) pages = [1,2,undefined];
+        if (lastPageId === 3) pages = [1,2,3];
+        if (upage === 1) pages =  [1,2,3];
+        else {
+            if (upage < lastPageId) {
+                pages = [upage-1, upage, upage+1];
+            } else {
+                pages = [upage-2, upage-1, upage];
+            }
+        }
+        let pageObjects = [
+            {el: page1El, idx:pages[0] }, 
+            {el: page2El, idx:pages[1] }, 
+            {el: page3El, idx:pages[2] },
+        ];
+        // Set the data-page attribute, text and classes for links
+        pageObjects.forEach(function(pageObject) {
+            if (pageObject.idx) {
+                pageObject.el.textContent = pageObject.idx;
+                pageObject.el.setAttribute("data-page", pageObject.idx);
+                if (pageObject.idx === upage) {
+                    pageObject.el.classList.add("is-current");
+                } else {
+                    pageObject.el.classList.remove("is-current");
+                }
+                pageObject.el.setAttribute("style", "display: initial;");
+            } else {
+                pageObject.el.setAttribute("style", "display: none;");
+            }
+        });
     }
 }
 
@@ -566,22 +611,21 @@ function parseTracks(topTracks) {
 //=====================================================================
 // Update the HTML to display event info
 //=====================================================================
-function displayEvents(events, str, limit = MAX_DISPLAY_RESULTS) {
-    let displayStr = (limit < events.length) ? ((user.page-1) * limit)+1 + "-" + user.page * limit + " of " : "";
-    displayStr += events.length + " " + str;
+function displayEvents(events, heading, limit = MAX_DISPLAY_RESULTS) {
     const displayNewDayHeading = true;
 
     // Set the Event Section Heading
-    eventHeadEl.textContent = displayStr;
+    eventHeadEl.textContent = heading;
     // Clear the current Event List from HTML
     eventListEl.innerHTML = "";
     // Keep track of iteration for limit
     let index = 0;
     // Keep track of date for date heading
     let lastOutputTime = "";
-    
+    let pageStart = (user.page-1) * MAX_DISPLAY_RESULTS;
+    let pageEvents = events.slice(pageStart, pageStart+limit);
     // For Each Event in the Array - Create Elements and add them to the page
-    events.forEach(function (event) {
+    pageEvents.forEach(function (event) {
         if (index++ >= limit) return;
 
         let div = document.createElement("div");
@@ -640,13 +684,13 @@ function displayEvents(events, str, limit = MAX_DISPLAY_RESULTS) {
             let dayHeader = document.createElement("h1");
             dayMarker.appendChild(dayHeader);
             dayHeader.classList.add("title");
-            console.log("OT", outputTime);
             dayHeader.textContent = moment(event.startDate, "YYYY-MM-DD").format("dddd MMMM Do");
         }
         lastOutputTime = event.startDate;
-        
+
         eventListEl.appendChild(div);
     });
+    updatePaging(events);
 }
 
 //=====================================================================

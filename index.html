@@ -77,11 +77,33 @@
                     <div class="tile is-ancestor">
                         <ul id="eventList" class="tile is-parent is-vertical is-marginless"></ul>
                     </div>
-                    <div id="pageDiv" class="pagination has-text-centered">
-                        <a href="#" id="pagePrev">PREV</a>
-                        <span id="pageNumber"></span>
-                        <a href="#" id="pageNext">NEXT</a>
-                    </div>
+                    <nav id="pageDiv" class="pagination" role="navigation" aria-label="pagination">
+                        <a id="pagePrev" class="pagination-previous">Previous</a>
+                        <a id="pageNext" class="pagination-next">Next page</a>
+                        <ul id="pageList" class="pagination-list">
+                          <li>
+                            <a id="pageFirst" class="pagination-link" data-page="1">1</a>
+                          </li>
+                          <li>
+                            <span class="pagination-ellipsis">&hellip;</span>
+                          </li>
+                          <li>
+                            <a id="page1" class="pagination-link is-current" data-page="45">45</a>
+                          </li>
+                          <li>
+                            <a id="page2" class="pagination-link is-current" data-page="46" aria-current="page">46</a>
+                          </li>
+                          <li>
+                            <a id="page3" class="pagination-link" data-page="47">47</a>
+                          </li>
+                          <li>
+                            <span class="pagination-ellipsis">&hellip;</span>
+                          </li>
+                          <li>
+                            <a id="pageTotal" class="pagination-link" data-page="86">86</a>
+                          </li>
+                        </ul>
+                      </nav>
                 </div>
                 <p class="divider"></p>
                 <!-- Discography Here -->

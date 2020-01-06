@@ -21,6 +21,10 @@ main {
     display: none;
 }
 
+#pageList {
+    list-style-type: none;
+}
+
 .divider {
     margin-top: 3rem;
 }
