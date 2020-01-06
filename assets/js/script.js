@@ -66,7 +66,9 @@ const artistTableParams = [
     { description: "Website", field: "website", isLink: true },
     // { description: "Biography", field: "bio"}, // Bio causes some styling issues due to the length
 ];
-const sk = "jNVqoANxyxv3dO3F";
+
+const sk = "jNVqoANxyxv3dO3F"; // TODO - REMOVE
+
 //=====================================================================
 // User Settings
 //=====================================================================
@@ -75,7 +77,7 @@ let user = {
     artist: undefined,
     sortFunc: sortDateDistance,
     page: 1,
-    lastSearch: "city",
+    lastSearch: "",
     events: {
         artist: undefined,
         area: undefined,
@@ -111,13 +113,11 @@ btnSearchEl.addEventListener("click", function () {
     eventHeadEl.textContent = "";
     discListEl.innerHTML = "";
     topListEl.innerHTML = "";
-    let strArtist = escape(inputArtistEl.value.trim());
+    let strArtist = inputArtistEl.value.trim();
     if (strArtist === "") {
         getAreaEvents();
-        user.lastSearch = "city";
     } else {
         getArtistData(strArtist, displayArtist);
-        user.lastSearch = strArtist;
     }
     labelStatusEl.classList.remove("is-danger");
     labelStatusEl.textContent = "Loading...";
@@ -163,50 +163,35 @@ pagePrevEl.addEventListener("click", function (event) {
 // Load the next page of results;
 //=====================================================================
 function loadPage() {
+    // Check for a valid page number
     if (user.page < 1) {
         user.page = 1;
         return;
+    } else if ((user.page - 1) * MAX_DISPLAY_RESULTS >= user.events.length) {
+        user.page--;
+        return;
     }
 
-    let events;
+    // Valid Page - Display the New Event Page
     eventListEl.innerHTML = "";
-
-    if (user.lastSearch === "city") {
-        events = user.events.area;   
-    } else {
-        events = user.events.artist;
-    }
-    
-    if ((user.page - 1) * MAX_DISPLAY_RESULTS < events.length) {
-        displayEvents(events, getResultStr());
-    } else {
-        // Don't do anything if requesting an invalid page
-    }
-
+    displayEvents(user.events, getResultStr());
+ 
+    // Send the user back to the top of the event list
     location.href = "#topEvent";
 }
 
 //=====================================================================
-// Get a printable result string
+// Get a printable result string (ex: Results 11-20 of 2503)
 //=====================================================================
 function getResultStr() {
     let page = user.page;
     let first = ((page - 1) * MAX_DISPLAY_RESULTS) + 1;
-    let last = page * MAX_DISPLAY_RESULTS;
-    let noun;
-    let total;
+    let last = Math.min(user.events.length, page * MAX_DISPLAY_RESULTS);
+    let noun = user.lastSearch;
+    let total = user.events.length;
     let result;
 
-    if (user.lastSearch === "city") {
-        // LOCATION SEARCH
-        total = user.events.area.length;
-        noun = user.location.city;
-    } else {
-        // ARTIST
-        total = user.events.artist.length;
-        noun = user.artist.name;
-    }
-
+    // Build a result string header based on total # of items and current page
     if (total === 0) {
         result = `No Event Results for ${noun}`;
     } else if (total === 1) {
@@ -217,7 +202,6 @@ function getResultStr() {
         result = `Results for ${noun}: ${first} - ${last} of ${total} events`;
     }
     return result;
-        
 }
 
 //=====================================================================
@@ -231,6 +215,7 @@ function getLocationPromise() {
     return axios.get(locationUrl)
         .then(function (response) {
             user.location = parseLocation(response);
+            user.lastSearch = user.location.city;
             return user.location;
         });
 }
@@ -294,7 +279,7 @@ function getAreaEvents(days = DAYS_CURRENT) {
             return events;
         }).then(function (events) {
             // Cache the area events
-            user.events.area = events;
+            user.events = events;
             labelStatusEl.textContent = "";
             // Display the Events on the Page
             displayEvents(events, getResultStr());
@@ -315,7 +300,7 @@ function getArtistData(strArtist) {
     // Fix the input data. 
     // 1. Remove leading and trailing spaces
     // 2. Replace spaces with + for use in query string
-    strArtist = strArtist.trim().replace(" ", "+");
+    strArtist = escape(strArtist.trim().replace(" ", "+"));
 
     // Create the API Urls
     const base = "https://www.theaudiodb.com/api/v1/json/1";
@@ -354,6 +339,7 @@ function getArtistData(strArtist) {
 
             // Parse the data we need into objects;
             var artist = parseArtist(artistResponse.data.artists[0]); // Keep this var so it can be accessed in then
+            user.lastSearch = artist.name;
             artist.albums = parseAlbums(discResponse.data.album);
             artist.tracks = parseTracks(topResponse.data.track);
             return getArtistEventsPromise(artist, DAYS_ARTIST, user.page);
@@ -443,9 +429,9 @@ function updatePaging(events) {
         let pages = [];
         let upage = parseInt(user.page);
         if (lastPageId === 1) pages = [1,undefined,undefined];
-        if (lastPageId === 2) pages = [1,2,undefined];
-        if (lastPageId === 3) pages = [1,2,3];
-        if (upage === 1) pages =  [1,2,3];
+        else if (lastPageId === 2) pages = [1,2,undefined];
+        else if (lastPageId === 3) pages = [1,2,3];
+        else if (upage === 1) pages =  [1,2,3];
         else {
             if (upage < lastPageId) {
                 pages = [upage-1, upage, upage+1];
@@ -743,8 +729,8 @@ function displayArtist(artist) {
 
     // Display the artist details table
     displayArtistTable(artist);
-    // Cache the artist
-    user.events.artist = artist.events;
+    // Cache the artist events
+    user.events = artist.events;
     // Display concerts
     displayEvents(artist.events, getResultStr());
     // Display the album discography list
