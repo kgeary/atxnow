@@ -71,6 +71,7 @@ const artistTableParams = [
     // { description: "Biography", field: "bio"}, // Bio causes some styling issues due to the length
 ];
 
+<<<<<<< HEAD
 const sk = "jNVqoANxyxv3dO3F"; // TODO - REMOVE
 
 //=====================================================================
@@ -87,6 +88,9 @@ let user = {
         area: undefined,
     }
 }
+=======
+let userLoc;
+>>>>>>> 7e7e207ec988eb7f8faac5582080d79454ebdb4f
 
 //==============================================================================
 // Event Listeners
@@ -222,13 +226,16 @@ function getConcertData(success, fail) {
 
     // 2. Pull and display the information for the relevant events
     axios.get(apiUrl).then(function (data) {
-        console.log(data.data._embedded.events[0])
+        
+        var event = data.data._embedded.events[0];
+        console.log(event);
         var eventObj = {
-            eventName: data.data._embedded.events[0].name,
-            eventDate: data.data._embedded.events[0].dates.start.localDate,
-            artistPic: data.data._embedded.events[0].images[0].url,
-            TMLink: data.data._embedded.events[0].url
-        }
+            name: event.name,
+            date: event.dates.start.localDate,
+            time: event.dates.start.localTime,
+            pic: event.images[0].url,
+            tmLink: event.url,
+        };
         console.log(eventObj)
     });
 }
