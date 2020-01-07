@@ -38,6 +38,8 @@ const page1El = document.getElementById("page1");
 const page2El = document.getElementById("page2");
 const page3El = document.getElementById("page3");
 const page4El = document.getElementById("page4");
+const page5El = document.getElementById("page5");
+
 
 const pageTotalEl = document.getElementById("pageTotal");
 
@@ -432,8 +434,12 @@ function updatePaging(events) {
         let upage = parseInt(user.page);
         if (lastPageId === 1) pages = [1, undefined, undefined];
         else if (lastPageId === 2) pages = [1, 2, undefined];
-        else if (lastPageId === 3) pages = [1, 2, 3];
-        else if (upage === 1) pages = [1, 2, 3];
+        else if (lastPageId === 3) pages = [1, 2, 3, undefined];
+        else if (lastPageId === 4) pages = [1, 2, 3, 4, undefined];
+        else if (lastPageId === 5) pages = [1, 2, 3, 4, 5];
+
+
+        else if (upage === 1) pages = [1, 2, 3, 4, 5];
         else {
             if (upage < lastPageId) {
                 pages = [upage - 1, upage, upage + 1];
@@ -446,6 +452,8 @@ function updatePaging(events) {
             { el: page2El, idx: pages[1] },
             { el: page3El, idx: pages[2] },
             { el: page4El, idx: pages[3] },
+            { el: page5El, idx: pages[4] },
+
 
         ];
         // Set the data-page attribute, text and classes for links
