@@ -40,11 +40,12 @@ main {
     border-radius: 20px;
 }
 
-#discList li {
-    border: 1px solid black;
-    border-radius: 10px;
-    padding: 0.5rem;
-    margin: 0.5rem 0;
+#pageDiv {
+    display: none;
+}
+
+#pageList {
+    list-style-type: none;
 }
 
 .divider {
@@ -57,23 +58,19 @@ iframe {
 }
 
 @media only screen and (max-width: 676px) {
-    #artistTable th,
-    #artistTable td {
+    #artistTable th, #artistTable td {
         /* Make sure the artist table stacks vertically on smaller screens */
         width: 100%;
         display: block;
         max-height: 200px;
     }
-
     #artistTable th {
         background-color: #444;
         color: whitesmoke;
     }
-
     #artistTable td {
         margin-bottom: 1rem;
     }
-
     iframe {
         width: 100%;
     }
