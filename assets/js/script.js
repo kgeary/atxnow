@@ -213,28 +213,28 @@ function getResultStr() {
 // 1. API REQUEST - Look up events based on the user input
 // 2. Pull and display the information for the relevant events
 //==============================================================================
-function getConcertData(success, fail) {
+// function getConcertData(success, fail) {
 
-    // 1. API REQUEST - Look up events based on the user input
-    var escapedInput = escape(inputArtistEl.value.replace(" ", "+"));
-    var apiUrl = "https://app.ticketmaster.com/discovery/v2/events.json?keyword=" + escapedInput + "&city=Austin&apikey=FQ8UCXc3CAuobviMuflPZ7WKasBMvUMM";
-    console.log("Ticketmaster info: " + apiUrl);
+//     // 1. API REQUEST - Look up events based on the user input
+//     var escapedInput = escape(inputArtistEl.value.replace(" ", "+"));
+//     var apiUrl = "https://app.ticketmaster.com/discovery/v2/events.json?keyword=" + escapedInput + "&city=Austin&apikey=FQ8UCXc3CAuobviMuflPZ7WKasBMvUMM";
+//     console.log("Ticketmaster info: " + apiUrl);
 
-    // 2. Pull and display the information for the relevant events
-    axios.get(apiUrl).then(function (data) {
-        
-        var event = data.data._embedded.events[0];
-        console.log(event);
-        var eventObj = {
-            name: event.name,
-            date: event.dates.start.localDate,
-            time: event.dates.start.localTime,
-            pic: event.images[0].url,
-            tmLink: event.url,
-        };
-        console.log(eventObj)
-    });
-}
+//     // 2. Pull and display the information for the relevant events
+//     axios.get(apiUrl).then(function (data) {
+
+//         var event = data.data._embedded.events[0];
+//         console.log(event);
+//         var eventObj = {
+//             name: event.name,
+//             date: event.dates.start.localDate,
+//             time: event.dates.start.localTime,
+//             pic: event.images[0].url,
+//             tmLink: event.url,
+//         };
+//         console.log(eventObj)
+//     });
+// }
 
 //==============================================================================
 // Append the results of the search onto the page
@@ -270,12 +270,12 @@ function getLocationPromise() {
 //  page = the results page to get retrieve
 //=====================================================================
 function getArtistEventsPromise(artist, days = DAYS_ARTIST, page = 1) {
-    let artistUrl = "https://api.songkick.com/api/3.0/artists/mbid:";
-    artistUrl += artist.mbid;
-    artistUrl += "/calendar.json?" + getQuery(days, page, MAX_QUERY_RESULTS);
-    console.log(artistUrl);
+    let artistUrl = "https://app.ticketmaster.com/discovery/v2/events?keyword=post+malone&apikey=FQ8UCXc3CAuobviMuflPZ7WKasBMvUMM";
+    console.log("z", artistUrl);
     return axios.get(artistUrl);
 }
+
+
 
 //=====================================================================
 // Call the API to get concert Data in the area
@@ -389,11 +389,10 @@ function getArtistData(strArtist) {
         })
         .then(function (response) {
             // Parse and Display The Events
-            //console.log("Artist Events", response);
+            console.log("Artist Events", response);
             let events = parseEvents(response);
             events.sort(user.sortFunc);
             artist.events = events;
-            artist.total = response.data.resultsPage.totalEntries;
             user.artist = artist;
             return artist;
         })
@@ -565,26 +564,26 @@ function parseLocation(response) {
 //=====================================================
 function parseEvents(response) {
     let respEvents = [];
-    let events = response.data.resultsPage.results.event;
+    console.log("Response check:", response);
+    let events = response.data._embedded.events;
     if (!events) return respEvents;
 
-    console.log("EVT", response);
+    // console.log("EVT", response);
     events.forEach(function (evt) {
         respEvents.push({
             id: evt.id,
-            name: evt.displayName,
+            name: evt.name,
             type: evt.type,
-            uri: evt.uri,
-            startDate: evt.start.date,
-            startTime: evt.start.time,
-            venue: evt.venue.displayName,
-            venueUri: evt.venue.uri,
-            city: evt.location.city,
-            lat: parseFloat(evt.location.lat),
-            lon: parseFloat(evt.location.lng),
-            total: evt.total,
+            uri: evt.url,
+            startDate: evt.dates.start.localDate,
+            startTime: evt.dates.start.localTime,
+            venue: evt._embedded.venues[0].name,
+            venueUri: evt.outlets[0].url,
+            city: evt._embedded.venues[0].city.name,
+            lat: parseFloat(evt._embedded.venues[0].location.latitude),
+            lon: parseFloat(evt._embedded.venues[0].location.longitude),
             distance: distance(user.location.lat, user.location.lon,
-                evt.location.lat, evt.location.lng)
+                parseFloat(evt._embedded.venues[0].location.latitude), parseFloat(evt._embedded.venues[0].location.longitude))
         });
     });
     return respEvents;
@@ -742,7 +741,7 @@ function displayEvents(events, heading, limit = MAX_DISPLAY_RESULTS) {
         let a = document.createElement("a");
         div.appendChild(a);
         a.setAttribute("class", "venue-link");
-        a.setAttribute("href", event.venueUri);
+        // a.setAttribute("href", event.venueUri);
         a.setAttribute("target", "_blank");
         a.textContent = event.venue;
 
