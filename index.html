@@ -48,28 +48,57 @@
             </div>
         </section>
 
-        <!-- Artist Info Box -->
-        <section class="section">
-            <div class="container">
-                <div id="artistInfo" class="has-text-centered media">
-                    <div class="columns level">
-                        <div class="column is-6 level-item">
-                            <!-- Artist Image -->
-                            <div class="image">
-                                <img id="artistThumb" class="image" alt="Artist Image">
-                            </div>
-                        </div>
+        <!-- Content container -->
+        <section class="section tile is-ancestor">
 
-                        <div class="column is-6 level-item">
-                            <!-- Artist Info -->
-                            <h1 id="artistName" class="title is-1 has-text-left"></h1>
-                            <table class="table">
-                                <tbody id="artistTable"></tbody>
-                            </table>
+            <!-- Column for Info, Disco, and Tracks -->
+            <div id="artistInfo" class="column tile is-child has-text-centered">
+                <!-- Artist Info Box -->
+                <div class="columns level">
+                    <div class="column is-6 level-item">
+                        <!-- Artist Image -->
+                        <div class="image tile is-child">
+                            <img id="artistThumb" class="image" alt="Artist Image">
+                        </div>
+                    </div>
+
+                    <div class="column is-6 level-item">
+                        <!-- Artist Info -->
+                        <h1 id="artistName" class="title is-1 has-text-left"></h1>
+                        <table class="table">
+                            <tbody id="artistTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+
+                <!-- Disco and Tracks Container -->
+                <div class="tile is-parent">
+                    <p class="divider"></p>
+                    <!-- Discography Here -->
+                    <div id="discBox" class="content is-outlined has-text-left tile is-child">
+                        <h1 id="discHead" class="title is-2"></h1>
+                        <div class="tile is-ancestor">
+                            <ul id="discList" class="tile is-parent is-vertical is-marginless"></ul>
+                        </div>
+                    </div>
+                    <p class="divider"></p>
+                    <!-- Top Tracks Here -->
+                    <div id="topBox" class="content is-outlined has-text-left tile is-child">
+                        <h1 id="topHead" class="title is-2"></h1>
+                        <div class="tile is-ancestor">
+                            <ul id="topList" class="tile is-parent is-vertical is-marginless"></ul>
                         </div>
                     </div>
                 </div>
-                <p class="divider"></p>
+            </div>
+
+
+
+
+            <p class="divider"></p>
+            <!-- Column for events -->
+            <div class="column tile is-parent">
                 <!-- Events Here -->
                 <div id="topEvent"></div>
                 <div id="eventBox" class="content is-outlined has-text-left">
@@ -111,26 +140,13 @@
                         </ul>
                     </nav>
                 </div>
-                <p class="divider"></p>
-                <!-- Discography Here -->
-                <div id="discBox" class="content is-outlined has-text-left">
-                    <h1 id="discHead" class="title is-2"></h1>
-                    <div class="tile is-ancestor">
-                        <ul id="discList" class="tile is-parent is-vertical is-marginless"></ul>
-                    </div>
-                </div>
-                <p class="divider"></p>
-                <!-- Top Tracks Here -->
-                <div id="topBox" class="content is-outlined has-text-left">
-                    <h1 id="topHead" class="title is-2"></h1>
-                    <div class="tile is-ancestor">
-                        <ul id="topList" class="tile is-parent is-vertical is-marginless"></ul>
-                    </div>
-                </div>
             </div>
+
         </section>
     </main>
 
+
+    </div>
     <!-- Footer -->
     <footer class="footer">
         <div class="content has-text-centered">
