@@ -71,7 +71,6 @@ const artistTableParams = [
     // { description: "Biography", field: "bio"}, // Bio causes some styling issues due to the length
 ];
 
-<<<<<<< HEAD
 const sk = "jNVqoANxyxv3dO3F"; // TODO - REMOVE
 
 //=====================================================================
@@ -88,9 +87,6 @@ let user = {
         area: undefined,
     }
 }
-=======
-let userLoc;
->>>>>>> 7e7e207ec988eb7f8faac5582080d79454ebdb4f
 
 //==============================================================================
 // Event Listeners
