@@ -37,6 +37,8 @@ const pageFirstEl = document.getElementById("pageFirst");
 const page1El = document.getElementById("page1");
 const page2El = document.getElementById("page2");
 const page3El = document.getElementById("page3");
+const page4El = document.getElementById("page4");
+
 const pageTotalEl = document.getElementById("pageTotal");
 
 const pageNextEl = document.getElementById("pageNext");
@@ -90,7 +92,7 @@ let user = {
 //=====================================================================
 // Page Link Click Handler
 //=====================================================================
-pageListEl.addEventListener("click", function(event) {
+pageListEl.addEventListener("click", function (event) {
     if (event.target.matches(".pagination-link")) {
         let link = event.target;
         user.page = link.getAttribute("data-page");
@@ -175,7 +177,7 @@ function loadPage() {
     // Valid Page - Display the New Event Page
     eventListEl.innerHTML = "";
     displayEvents(user.events, getResultStr());
- 
+
     // Send the user back to the top of the event list
     location.href = "#topEvent";
 }
@@ -272,7 +274,7 @@ function getAreaEvents(days = DAYS_CURRENT) {
             // Sort the Array using the current sort strategy
             events.sort(user.sortFunc);
             // Filter the array of duplicate events
-            events = events.filter(function(value, index, arr) {
+            events = events.filter(function (value, index, arr) {
                 return (index === arr.findIndex(i => i.id === value.id));
             });
             // Hide/Show Pagination as needed
@@ -405,47 +407,49 @@ function updatePaging(events) {
             pageNextEl.setAttribute("enabled", "");
         } else {
             pageNextEl.setAttribute("disabled", "");
-            pageNextEl.removeAttribute("enabled" , "");
+            pageNextEl.removeAttribute("enabled", "");
         }
 
         if (isPrevEnabled) {
             pagePrevEl.removeAttribute("disabled", "");
             pagePrevEl.setAttribute("enabled", "");
-        }   else {
+        } else {
             pagePrevEl.setAttribute("disabled", "");
             pagePrevEl.removeAttribute("enabled", "");
         }
-        
+
         // Set the 1st Page
-        pageFirstEl.setAttribute("data-page", 1);
-        pageFirstEl.textContent = 1;
+        page1El.setAttribute("data-page", 1);
+        page1El.textContent = 1;
 
         // Set the Last Page
-        let lastPageId = Math.ceil(events.length/MAX_DISPLAY_RESULTS);
+        let lastPageId = Math.ceil(events.length / MAX_DISPLAY_RESULTS);
         pageTotalEl.setAttribute("data-page", lastPageId);
         pageTotalEl.textContent = lastPageId;
-        
+
         // Set the Middle Pages
         let pages = [];
         let upage = parseInt(user.page);
-        if (lastPageId === 1) pages = [1,undefined,undefined];
-        else if (lastPageId === 2) pages = [1,2,undefined];
-        else if (lastPageId === 3) pages = [1,2,3];
-        else if (upage === 1) pages =  [1,2,3];
+        if (lastPageId === 1) pages = [1, undefined, undefined];
+        else if (lastPageId === 2) pages = [1, 2, undefined];
+        else if (lastPageId === 3) pages = [1, 2, 3];
+        else if (upage === 1) pages = [1, 2, 3];
         else {
             if (upage < lastPageId) {
-                pages = [upage-1, upage, upage+1];
+                pages = [upage - 1, upage, upage + 1];
             } else {
-                pages = [upage-2, upage-1, upage];
+                pages = [upage - 2, upage - 1, upage];
             }
         }
         let pageObjects = [
-            {el: page1El, idx:pages[0] }, 
-            {el: page2El, idx:pages[1] }, 
-            {el: page3El, idx:pages[2] },
+            { el: page1El, idx: pages[0] },
+            { el: page2El, idx: pages[1] },
+            { el: page3El, idx: pages[2] },
+            { el: page4El, idx: pages[3] },
+
         ];
         // Set the data-page attribute, text and classes for links
-        pageObjects.forEach(function(pageObject) {
+        pageObjects.forEach(function (pageObject) {
             if (pageObject.idx) {
                 pageObject.el.textContent = pageObject.idx;
                 pageObject.el.setAttribute("data-page", pageObject.idx);
@@ -642,8 +646,8 @@ function displayEvents(events, heading, limit = MAX_DISPLAY_RESULTS) {
     let index = 0;
     // Keep track of date for date heading
     let lastOutputTime = "";
-    let pageStart = (user.page-1) * MAX_DISPLAY_RESULTS;
-    let pageEvents = events.slice(pageStart, pageStart+limit);
+    let pageStart = (user.page - 1) * MAX_DISPLAY_RESULTS;
+    let pageEvents = events.slice(pageStart, pageStart + limit);
     // For Each Event in the Array - Create Elements and add them to the page
     pageEvents.forEach(function (event) {
         if (index++ >= limit) return;
