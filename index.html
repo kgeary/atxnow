@@ -7,12 +7,16 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>ATX Now - Your Guide to Shows in Austin</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
-    <link rel="stylesheet" href="assets/css/bulma.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.8.0/css/bulma.min.css">
+    <!-- <link rel="stylesheet" href="assets/css/bulma.css"> -->
     <!-- <link rel="stylesheet" href="assets/css/bulma.min.css"> -->
     <link rel="stylesheet" href="assets/css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.0/axios.js"></script>
+
 </head>
 
 <body>
+<<<<<<< HEAD
     <!-- Title Block -->
     <section class="hero">
         <div class="hero-body">
@@ -91,8 +95,21 @@
                         </div>
                     </div>
                 </div>
+=======
+    <!-- Header Section -->
+    <section class="hero is-large has-bg-img">
+        <div class="hero-body">
+            <div class="container">
+                <h1 id="ATX-Title" class="title is-1 has-text-centered">
+                    ATX Now
+                </h1>
+                <h2 class="subtitle has-text-centered">
+                    Project 1 Subtitle
+                </h2>
+>>>>>>> master
             </div>
 
+<<<<<<< HEAD
 
 
 
@@ -140,6 +157,42 @@
                         </ul>
                     </nav>
                 </div>
+=======
+    <section class="section columns level-item has-text-centered">
+        <div id="SearchBox" class="container level column is-narrow">
+
+            <div class="field has-addons">
+                <p class="control">
+                    <input id="findACity" class="input" type="text" placeholder="Find a City">
+                </p>
+                <p class="control">
+                    <button id="btnSearchEl" class="button is-success">
+                        Search
+                    </button>
+                </p>
+            </div>
+
+            <div class="box" id="resultsbox">
+                <h1 id="artistName" class="title"></h1>
+                <img id="artistThumb" class="thumbnail" alt="thumbnail" width="100px">
+                <table class="table is-striped is-bordered">
+                    <tr>
+                        <th>Genre</th>
+                        <td id="artistGenre"></td>
+                    </tr>
+                    <tr>
+                        <th>Mood</th>
+                        <td id="artistMood"></td>
+                    </tr>
+                    <tr>
+                        <th>Formed</th>
+                        <td id="artistYear"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"><img id="artistLogo" alt="logo"></td>
+                    </tr>
+                </table>
+>>>>>>> master
             </div>
 
         </section>
@@ -166,6 +219,7 @@
             </div>
         </div>
     </footer>
+<<<<<<< HEAD
     <!-- Font Awesome for Icons -->
     <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
     <!-- axios for AJAX -->
@@ -173,6 +227,8 @@
     <!-- Moment for time formatting -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
     <!-- script.js -->
+=======
+>>>>>>> master
     <script src="assets/js/script.js"></script>
 </body>
 

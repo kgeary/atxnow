@@ -320,14 +320,21 @@ function getArtistData(strArtist) {
         axios.get(discographyUrl),
         axios.get(topUrl),
     ])
+<<<<<<< HEAD
         .then(function (responses) {
             // ONCE All Requests have been successfully resolved...   
             // Unpack the individual response values from the responses array 
             let [artistResponse, discResponse, topResponse] = responses;
+=======
+        .then(function (values) {
+            // Get the individual reponse values
+            let [artistResponse, discographyResponse] = values;
+>>>>>>> master
 
             //=====================================================
             // DEBUGGING - Print the Response Objects
             //=====================================================
+<<<<<<< HEAD
             console.log("=== All API Calls Good! ===");
             //console.log(artistResponse);
             //console.log(discResponse);
@@ -800,6 +807,71 @@ function displayAlbums(albums) {
         li.setAttribute("class", "tile is-child box");
         discListEl.appendChild(li);
     });
+=======
+            console.log("=== SUCCESS ===");
+            console.log(artistResponse);
+            console.log(discographyResponse);
+
+            //=====================================================
+            // If artist was not found throw an error for catch
+            //=====================================================
+            if (!artistResponse.data.artists) {
+                throw new Error("no artists found");
+            }
+
+            //=====================================================
+            // PARSE ARTIST
+            //   Create an object with all the fields we care about
+            //=====================================================
+            let artistData = artistResponse.data.artists[0];
+            let artist = {
+                id: artistData.idArtist,
+                musicBrainzId: artistData.strMusicBrainzID,
+                bio: artistData.strBiographyEN,
+                formed: artistData.intFormedYear,
+                genre: artistData.strGenre,
+                logo: artistData.strArtistLogo,
+                mood: artistData.strMood,
+                name: artistData.strArtist,
+                origin: artistData.strCountry,
+                style: artistData.strStyle,
+                thumbnail: artistData.strArtistThumb,
+                website: artistData.strWebsite,
+            };
+
+            //=====================================================
+            // PARSE ALBUMS
+            //   Create an empty array and push a new album 
+            //   object for each iteration
+            //=====================================================
+            let albums = [];
+            let respAlbums = discographyResponse.data.album;
+            for (let i = 0; i < respAlbums.length; i++) {
+                let album = respAlbums[i];
+                // Create an array of album objects (name, year)
+                albums.push({
+                    name: album.strAlbum,
+                    year: album.intYearReleased,
+                });
+            }
+
+            console.table(artist);
+            console.table(albums);
+
+            artist.albums = albums;
+
+            success(artist);
+        })
+        .catch(function (error) {
+            //=====================================================
+            // Handle all Errors here
+            //=====================================================
+            console.log("<<< ERROR >>>");
+            console.log(error.message);
+            console.log(error);
+            fail(error);
+        });
+>>>>>>> master
 }
 
 //====================================================================
@@ -860,6 +932,7 @@ function getQuery(days, page, perPage) {
 function getDateQuery(days) {
     if (!days) return ""; // Return Empty String if Days not defined
 
+<<<<<<< HEAD
     let m = moment().clone().add(days, "days");
     return "&min_date=" + moment().format("YYYY-MM-DD") +
         "&max_date=" + m.format("YYYY-MM-DD");
@@ -937,6 +1010,34 @@ function onError(error) {
 /**************************************/
 /* MAIN - Code that runs at startup   */
 /**************************************/
+=======
+// let btnSearchEl = document.getElementById("btnSearch");
+let inputArtistEl = document.getElementById("inputArtist");
+
+// btnSearchEl.addEventListener("click", function () {
+//     let artist = inputArtistEl.value;
+//     getArtistData(artist, displayArtists);
+// });
+
+let btnSearchEl = document.getElementById("btnSearchEl");
+btnSearchEl.addEventListener("click", function () {
+    let inputCityEl = document.getElementById("findACity");
+    console.log(inputCityEl.value)
+    var apiUrl = "https://app.ticketmaster.com/discovery/v2/events.json?classificationName=music&city=[" + inputCityEl.value + "]&apikey=FQ8UCXc3CAuobviMuflPZ7WKasBMvUMM"
+
+    axios.get(apiUrl).then(function (data) {
+        console.log(data.data._embedded.events[0])
+        var eventObj = {
+            artistPic: data.data._embedded.events[0].images[0].url,
+            eventName: data.data._embedded.events[0].name,
+            TMLink: data.data._embedded.events[0].url
+
+        }
+
+        console.log(eventObj)
+    })
+});
+>>>>>>> master
 
 // Get Concert Data for the current location
 getAreaEvents();

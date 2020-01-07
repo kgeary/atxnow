@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 body {
     min-height: 100vh;
     display: flex;
@@ -51,4 +52,24 @@ iframe {
     iframe {
         width: 100%;
     }
+=======
+body{
+    background-image: linear-gradient(red, yellow);
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+}
+
+.has-bg-img { 
+    background: url("../images/people-at-concert.jpg")center center; 
+    background-size:cover; 
+    margin-bottom: 20px;
+    border-radius: 5px;
+}
+
+#ATX-Title {
+    color: whitesmoke;
+}
+
+#resultsbox {
+    box-shadow:20px 20px 20px rgba(0, 0, 0, 0.301);
+>>>>>>> master
 }
