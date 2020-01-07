@@ -1,19 +1,54 @@
-body{
-    background-image: linear-gradient(red, yellow);
-    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
-.has-bg-img { 
-    background: url("../images/people-at-concert.jpg")center center; 
-    background-size:cover; 
-    margin-bottom: 20px;
-    border-radius: 5px;
+main {
+    flex: 1;
 }
 
-#ATX-Title {
-    color: whitesmoke;
+#artistInfo {
+    display: none;
+    margin-top: 3rem;
 }
 
-#resultsbox {
-    box-shadow:20px 20px 20px rgba(0, 0, 0, 0.301);
+#artistThumb {
+    border-radius: 20px;
+}
+
+#pageDiv {
+    display: none;
+}
+
+#pageList {
+    list-style-type: none;
+}
+
+.divider {
+    margin-top: 3rem;
+}
+
+iframe {
+    width: 500px;
+    height: 300px;
+}
+
+@media only screen and (max-width: 676px) {
+    #artistTable th, #artistTable td {
+        /* Make sure the artist table stacks vertically on smaller screens */
+        width: 100%;
+        display: block;
+        max-height: 200px;
+    }
+    #artistTable th {
+        background-color: #444;
+        color: whitesmoke;
+    }
+    #artistTable td {
+        margin-bottom: 1rem;
+    }
+    iframe {
+        width: 100%;
+    }
 }
