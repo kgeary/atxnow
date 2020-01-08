@@ -10,9 +10,9 @@ body {
     color: whitesmoke;
 }
 
-.has-bg-img { 
-    background: url("../images/people-at-concert.jpg")center center; 
-    background-size:cover; 
+.has-bg-img {
+    background: url("../images/people-at-concert.jpg")center center;
+    background-size: cover;
     margin-bottom: 20px;
     border-radius: 5px;
 }
@@ -26,8 +26,8 @@ main {
     margin-top: 3rem;
 }
 
-.control{
-    box-shadow:5px 5px 5px rgba(128, 128, 128, 0.596)
+.control {
+    box-shadow: 5px 5px 5px rgba(128, 128, 128, 0.596)
 }
 
 #artistTable td {
@@ -58,18 +58,11 @@ iframe {
 }
 
 @media only screen and (max-width: 676px) {
-    #artistTable th, #artistTable td {
-        /* Make sure the artist table stacks vertically on smaller screens */
+    .table {
         width: 100%;
-        display: block;
-        max-height: 200px;
-    }
-    #artistTable th {
-        background-color: #444;
-        color: whitesmoke;
     }
     #artistTable td {
-        margin-bottom: 1rem;
+        width: 100%;
     }
     iframe {
         width: 100%;
