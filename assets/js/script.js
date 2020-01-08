@@ -53,6 +53,8 @@ const discHeadEl = document.getElementById("discHead");
 const topListEl = document.getElementById("topList");
 const topHeadEl = document.getElementById("topHead");
 
+const heroBlockEl = document.getElementById("heroBlock");
+
 //=====================================================================
 // Dynamically create a table of Artist Information
 // List all the fields in the html that should be included
@@ -125,6 +127,9 @@ btnSearchEl.addEventListener("click", function () {
 
     // Initialize Paging
     user.page = 1;
+
+    // Make the hero small
+    heroBlockEl.classList.remove("is-large");
 });
 
 //=====================================================================
