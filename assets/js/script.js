@@ -480,6 +480,7 @@ function parseEvents(response) {
     events.forEach(function (evt) {
         //console.log("TicketMaster Event Details", evt);
         let venue = evt._embedded.venues[0];
+        console.log("venue", venue);
         respEvents.push({
             id: evt.id,
             name: evt.name,
@@ -614,7 +615,7 @@ function displayEvents(displayNewDayHeading = true) {
         div.appendChild(h3);
 
         // Create a p for City, State
-        let pCity = createEl("p", event.city + ", " + event.state);
+        let pCity = createEl("p", undefined, event.city + ", " + event.state);
         div.appendChild(pCity);
         
         // Create a p for Start Date and Time
