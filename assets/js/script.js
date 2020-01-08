@@ -112,7 +112,7 @@ btnSearchEl.addEventListener("click", function () {
     topListEl.innerHTML = "";
     artistInfoEl.setAttribute("style", "display: none;");
     pageDivEl.setAttribute("style", "display: none;");
-    
+
     // Handle the user input
     let strArtist = inputArtistEl.value.trim();
     if (strArtist === "") {
@@ -127,6 +127,10 @@ btnSearchEl.addEventListener("click", function () {
 
     // Initialize Paging
     user.page = 1;
+
+    // Scroll to results
+    $("html, body").animate({ scrollTop: 1000 }, "slow");
+    return false;
 
     // Make the hero small
     heroBlockEl.classList.remove("is-large");
@@ -590,20 +594,20 @@ function displayEvents(displayNewDayHeading = true) {
     let pageStart = (user.page - 1) * MAX_DISPLAY_RESULTS;
     // Get a copy of the current page of events
     let pageEvents = events.slice(pageStart, pageStart + limit);
-    
+
     // For Each Event in the Current Page Array:
     //   Create and display HTML Elements for the current event
     pageEvents.forEach(function (event) {
         if (index++ >= limit) return;   // Check to see if we are at the limit
-        
+
         let div = createEl("div", "box"); // Create an event container div
         let h1 = createEl("h4", "title"); // Create a h1 for Event Name
         div.appendChild(h1);
-    
+
         // Create a Link to Event Details.
         let headLink = createLink(event.name, "event-link", event.uri);
         h1.appendChild(headLink);
-        
+
         // if event is close by... Create a Local Event Span
         if (event.distance < MAX_DISTANCE_LOCAL) {
             headLink.classList.add("has-text-weight-bold");
@@ -617,21 +621,21 @@ function displayEvents(displayNewDayHeading = true) {
         // Create a p for City, State
         let pCity = createEl("p", undefined, event.city + ", " + event.state);
         div.appendChild(pCity);
-        
+
         // Create a p for Start Date and Time
         let inputMoment = moment(event.startDate + event.startTime, "YYYY-MM-DDHH:mm:ss");
         let outputTime = inputMoment.format('dddd MMMM Do @ h:mm a');
         let pDate = createEl("p", "date", outputTime);
         div.appendChild(pDate);
-        
+
         // Create a p for Distance to Event
         let pDistance = createEl("p", undefined, "Distance to Event: " + event.distance.toFixed(1) + "mi");
         div.appendChild(pDistance);
-        
+
         // Create a Venue Link
         let venueLink = createLink(event.venue, "venue-link", event.venueUri);
         div.appendChild(venueLink);
-        
+
         // if displayNewDayHeading is enabled...
         // Add a header div when we encounter a new day in the listings
         if (displayNewDayHeading && lastOutputTime !== event.startDate) {
@@ -667,7 +671,7 @@ function createLink(text, cls, href) {
 //=====================================================================
 // Create an HTML Link with the desired attributes
 //=====================================================================
-function createEl(tag, cls, text=undefined) {
+function createEl(tag, cls, text = undefined) {
     let el = document.createElement(tag);
     if (text) el.textContent = text;
     if (cls) el.setAttribute("class", cls);
