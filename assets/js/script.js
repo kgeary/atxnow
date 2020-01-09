@@ -90,6 +90,7 @@ let user = {
 //==============================================================================
 // Event Listeners
 //==============================================================================
+
 //=====================================================================
 // Pagination Page Link Click Handler
 //=====================================================================
@@ -101,6 +102,12 @@ pageListEl.addEventListener("click", function (event) {
     }
 });
 
+//=====================================================================
+// Scroll Down on Click Function
+//=====================================================================
+function scrollWin() {
+    window.scrollTo(0, 735);
+}
 //=====================================================================
 // Search Button Click Handler
 //=====================================================================
@@ -127,13 +134,6 @@ btnSearchEl.addEventListener("click", function () {
 
     // Initialize Paging
     user.page = 1;
-
-    // Scroll to results
-    $("html, body").animate({ scrollTop: 1000 }, "slow");
-    return false;
-
-    // Make the hero small
-    heroBlockEl.classList.remove("is-large");
 });
 
 //=====================================================================
@@ -350,6 +350,8 @@ function getArtistData(strArtist) {
             displayArtist(response);
             // Clear the user input
             inputArtistEl.value = "";
+            // Scroll to results
+            scrollWin()
         })
         .catch(function (error) {
             //=====================================================
