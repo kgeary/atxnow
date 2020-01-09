@@ -21,6 +21,16 @@ body {
     border-radius: 5px;
 }
 
+.local-event {
+    background-color: orangered;
+    color: white;
+    opacity: 0.9;
+    padding: 0.25rem 0.5rem;
+    margin-left: 0.25rem;
+    text-align: center;
+    border-radius: 10px;
+    font-size: small;
+}
 main {
     flex: 1;
 }
@@ -32,6 +42,11 @@ main {
 
 .control {
     box-shadow: 5px 5px 5px rgba(128, 128, 128, 0.596)
+}
+
+.table, .box {
+    background-color: #f19429;
+    border-radius: 10px;
 }
 
 #artistTable td {
@@ -68,6 +83,11 @@ iframe {
     height: 300px;
 }
 
+#pageInput {
+    width: 70px;
+    text-align: center;
+}
+
 @media only screen and (max-width: 676px) {
     .table {
         width: 100%;
@@ -77,5 +97,12 @@ iframe {
     }
     iframe {
         width: 100%;
+    }
+    #pageInput {
+        width: 50px;
+        text-align: center;
+    }
+    .pageInputGroup {
+        order: 1;
     }
 }

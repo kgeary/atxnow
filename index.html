@@ -112,36 +112,13 @@
                     </div>
                     <nav id="pageDiv" class="pagination" role="navigation" aria-label="pagination">
                         <a id="pagePrev" class="pagination-previous">Previous</a>
-                        <a id="pageNext" class="pagination-next">Next page</a>
-                        <ul id="pageList" class="pagination-list">
-                            <li>
-                                <a id="pageFirst" class="pagination-link is-current" data-page="1">1</a>
-                            </li>
-                            <!-- <li>
-                            <span class="pagination-ellipsis">&hellip;</span>
-                          </li> -->
-                            <li>
-                                <a id="page1" class="pagination-link is-current" data-page="1">1</a>
-                            </li>
-                            <li>
-                                <a id="page2" class="pagination-link" data-page="2" aria-current="page">2</a>
-                            </li>
-                            <li>
-                                <a id="page3" class="pagination-link" data-page="3">3</a>
-                            </li>
-                            <li>
-                                <a id="page4" class="pagination-link" data-page="4">4</a>
-                            </li>
-                            <li>
-                                <a id="page5" class="pagination-link" data-page="5">5</a>
-                            </li>
-                            <!-- <li>
-                            <span class="pagination-ellipsis">&hellip;</span>
-                          </li> -->
-                            <li>
-                                <a id="pageTotal" class="pagination-link" data-page="86">#</a>
-                            </li>
-                        </ul>
+                        <div class="pageInputGroup pagination-list">
+                            <input type="number" id="pageInput" class="input" min="1">
+                            <a id="pageGo" class="pagination-link">Go</a>
+                            <span>of</span>
+                            <a id="pageLast" class="pagination-link">X</a>
+                        </div>
+                        <a id="pageNext" class="pagination-next">Next</a>
                     </nav>
                 </div>
             </div>
