@@ -1,19 +1,18 @@
 //==============================================================================
 // CONSTANTS
 //==============================================================================
-const MAX_METROS = 20;          // How many metro areas to include
+const MAX_TM_RESSPONSE_SIZE = 200; // Max results ticketmaster will send at a time
 const MAX_DISPLAY_RESULTS = 10; // How Many Results to display at once.
-const MAX_QUERY_RESULTS = 50;   // How Many Results to request at once.
-const DAYS_CURRENT = 7;         // How many days to show for current events
-const DAYS_ARTIST = 365;        // How many days to show for artist events
-const KM_TO_MI = 0.6213711922;  // KM to Miles conversion factor
-const MAX_DISTANCE_LOCAL = 15;  // MAX Distance in Miles to be considered local
-
+const MAX_DISTANCE_LOCAL = 20;  // MAX Distance in Miles to be considered local
+const ZOOM_ARTIST = 3;
+const ZOOM_LOCAL = 11;
+const ZOOM_DEFAULT = 12;
 //==============================================================================
 // HTML Elements
 //==============================================================================
 // Containers
 const artistInfoEl = document.getElementById("artistInfo");
+const heroBlockEl = document.getElementById("heroBlock");
 
 // Artist Search
 const btnSearchEl = document.getElementById("btnSearch");
@@ -32,19 +31,11 @@ const eventHeadEl = document.getElementById("eventHead");
 
 // Pagination
 const pageDivEl = document.getElementById("pageDiv");
-const pageListEl = document.getElementById("pageList");
-const pageFirstEl = document.getElementById("pageFirst");
-const page1El = document.getElementById("page1");
-const page2El = document.getElementById("page2");
-const page3El = document.getElementById("page3");
-const page4El = document.getElementById("page4");
-const page5El = document.getElementById("page5");
-
-
-const pageTotalEl = document.getElementById("pageTotal");
-
 const pageNextEl = document.getElementById("pageNext");
 const pagePrevEl = document.getElementById("pagePrev");
+const pageLastEl = document.getElementById("pageLast");
+const pageInputEl = document.getElementById("pageInput");
+const pageGoEl = document.getElementById("pageGo");
 
 // Discography
 const discListEl = document.getElementById("discList");
@@ -54,6 +45,7 @@ const discHeadEl = document.getElementById("discHead");
 const topListEl = document.getElementById("topList");
 const topHeadEl = document.getElementById("topHead");
 
+const mq_key = "VRD3y4E9VSKqK3emqpyfILrJCl7sqvg1";
 //=====================================================================
 // Dynamically create a table of Artist Information
 // List all the fields in the html that should be included
@@ -71,69 +63,54 @@ const artistTableParams = [
     // { description: "Biography", field: "bio"}, // Bio causes some styling issues due to the length
 ];
 
-const sk = "jNVqoANxyxv3dO3F"; // TODO - REMOVE
-
 //=====================================================================
 // User Settings
 //=====================================================================
 let user = {
     location: undefined,
     artist: undefined,
-    sortFunc: sortDateDistance,
+    map: undefined,
+    zoom: ZOOM_DEFAULT,
     page: 1,
     lastSearch: "",
-    events: {
-        artist: undefined,
-        area: undefined,
-    }
+    events: undefined,
 }
 
 //==============================================================================
 // Event Listeners
 //==============================================================================
-//=====================================================================
-// Page Link Click Handler
-//=====================================================================
-pageListEl.addEventListener("click", function (event) {
-    if (event.target.matches(".pagination-link")) {
-        let link = event.target;
-        user.page = link.getAttribute("data-page");
-        loadPage();
-    }
-});
 
 //=====================================================================
 // Search Button Click Handler
 //=====================================================================
 btnSearchEl.addEventListener("click", function () {
-    // Clear out old concert listings
-    // Get and Escape the User Input for security
-    // Request the artist data from the API
-    // Set the Status Label class to include is-danger to give red text
-    // Update the Status Label to indicate we are loading
-    // Hide the old info
-    // Clear the input
+    // Clear out old listings, elements
     eventListEl.innerHTML = "";
     eventHeadEl.textContent = "";
     discListEl.innerHTML = "";
     topListEl.innerHTML = "";
+    artistInfoEl.setAttribute("style", "display: none;");
+    pageDivEl.setAttribute("style", "display: none;");
+
+    // Handle the user input
     let strArtist = inputArtistEl.value.trim();
     if (strArtist === "") {
         getAreaEvents();
     } else {
         getArtistData(strArtist, displayArtist);
     }
+
+    // Set the Loading Status
     labelStatusEl.classList.remove("is-danger");
     labelStatusEl.textContent = "Loading...";
-    artistInfoEl.setAttribute("style", "display: none;");
-    // Initialize Paging, Hide the paging until needed
-    user.page = 1;
-    pageDivEl.setAttribute("style", "display: none;");
 
+    // Initialize Paging
+    user.page = 1;
 });
 
 //=====================================================================
 // Artist Search Input KeyPress Event (Watch for enter)
+// - redirect to the click handler
 //=====================================================================
 inputArtistEl.addEventListener("keypress", function (event) {
     // If the Keypressed was 13 (Enter) then trigger a Button Search Click Event
@@ -144,6 +121,7 @@ inputArtistEl.addEventListener("keypress", function (event) {
 
 //=====================================================================
 // Next Button Click
+// Increment the page number and try to load it
 //=====================================================================
 pageNextEl.addEventListener("click", function (event) {
     event.preventDefault();
@@ -153,6 +131,7 @@ pageNextEl.addEventListener("click", function (event) {
 
 //=====================================================================
 // Previous Button Click
+// Decrement the page number and try to load it
 //=====================================================================
 pagePrevEl.addEventListener("click", function (event) {
     event.preventDefault();
@@ -160,32 +139,61 @@ pagePrevEl.addEventListener("click", function (event) {
     loadPage();
 });
 
+// pageGo click event handler
+pageGoEl.addEventListener("click", function (event) {
+    pageInputEl.value = parseInt(pageInputEl.value);
+    user.page = pageInputEl.value;
+    pageInputEl.value = "";
+    loadPage();
+});
+
+// pageInput keyPress event handler
+pageInputEl.addEventListener("keypress", function (event) {
+    if (event.which === 13) {
+        pageGoEl.click();
+    }
+});
+
 //==============================================================================
 // Helper Functions
 //==============================================================================
+
 //=====================================================================
-// Load the next page of results;
+// Scroll Down on Click Function
+//=====================================================================
+function scrollWin() {
+    window.scrollTo(0, 735);
+}
+
+//=====================================================================
+// Load and Display the current page of results based on:
+//  - user event list
+//  - user page
 //=====================================================================
 function loadPage() {
-    // Check for a valid page number
+    // Check for a valid page number 
+    // don't reload the page if we don't have one
     if (user.page < 1) {
         user.page = 1;
+        pageInputEl.value = user.page;
         return;
     } else if ((user.page - 1) * MAX_DISPLAY_RESULTS >= user.events.length) {
-        user.page--;
+        user.page = Math.ceil(user.events.length / MAX_DISPLAY_RESULTS);
+        pageInputEl.value = user.page;
         return;
     }
 
-    // Valid Page - Display the New Event Page
+    // Clear out then re-display the Event Page
     eventListEl.innerHTML = "";
-    displayEvents(user.events, getResultStr());
+    displayEvents();
 
     // Send the user back to the top of the event list
     location.href = "#topEvent";
 }
 
 //=====================================================================
-// Get a printable result string (ex: Results 11-20 of 2503)
+// Get a printable result string for displayEvents 
+// returns: Results description string. Ex: "Results 11-20 of 2503"
 //=====================================================================
 function getResultStr() {
     let page = user.page;
@@ -197,19 +205,20 @@ function getResultStr() {
 
     // Build a result string header based on total # of items and current page
     if (total === 0) {
-        result = `No Event Results for ${noun}`;
+        result = `No Results for ${noun}`;
     } else if (total === 1) {
-        result = `Results for ${noun}: ${total} event`;
+        result = `${noun}: ${total} result`;
     } else if (total < MAX_DISPLAY_RESULTS) {
-        result = `Results for ${noun}: ${total} events`;
+        result = `${noun}: ${total} results`;
     } else {
-        result = `Results for ${noun}: ${first} - ${last} of ${total} events`;
+        result = `${noun}: Results ${first} - ${last} of ${total}`;
     }
     return result;
 }
 
 //=====================================================================
 // Call the API to get the current location
+// returns a promise to set user.location
 //=====================================================================
 function getLocationPromise() {
     const locationUrl = "https://json.geoiplookup.io/";
@@ -225,68 +234,66 @@ function getLocationPromise() {
 }
 
 //=====================================================================
-// Get a Promise to retriev the Events for an Artist
+// Get a Promise to retrieve the Events for an Artist
 //  artist = artist object
-//  days = number of days to search. undefined = no max date
-//  page = the results page to get retrieve
 //=====================================================================
-function getArtistEventsPromise(artist, days = DAYS_ARTIST, page = 1) {
-    let artistUrl = "https://api.songkick.com/api/3.0/artists/mbid:";
-    artistUrl += artist.mbid;
-    artistUrl += "/calendar.json?" + getQuery(days, page, MAX_QUERY_RESULTS);
-    console.log(artistUrl);
+function getArtistEventsPromise(artist) {
+    let keyword = "keyword=" + artist.name;
+    let startDate = "&startDateTime=" + moment().format("YYYY-MM-DDT00:00:00Z");
+    let sort = "&sort=date,asc";
+    let size = "&size=" + MAX_TM_RESSPONSE_SIZE;
+    let classification = "&classificationName=Music";
+    let country = "&countryCode=US";
+    let artistUrl = "https://app.ticketmaster.com/discovery/v2/events?" +
+        keyword + startDate + sort + size + country + classification +
+        "&apikey=FQ8UCXc3CAuobviMuflPZ7WKasBMvUMM";
     return axios.get(artistUrl);
+}
+
+//=====================================================================
+// Get a Promise to retrieve the Events for a Location
+//  loc = location object
+//=====================================================================
+function getLocalEventsPromise(loc) {
+    const radiusMiles = MAX_DISTANCE_LOCAL;
+    let latlng = "latlong=" + loc.lat + "," + loc.lon;
+    let startDate = "&startDateTime=" + moment().format("YYYY-MM-DDT00:00:00Z");
+    let radius = "&radius=" + radiusMiles + "&unit=miles";
+    let sort = "&sort=date,asc";
+    let size = "&size=" + MAX_TM_RESSPONSE_SIZE;
+    let classification = "&classificationName=Music";
+    let country = "&countryCode=US";
+    let locationUrl = "https://app.ticketmaster.com/discovery/v2/events?" +
+        latlng + startDate + radius + sort + size + country + classification +
+        "&apikey=FQ8UCXc3CAuobviMuflPZ7WKasBMvUMM";
+    console.log("Location Events URL", locationUrl);
+    return axios.get(locationUrl);
 }
 
 //=====================================================================
 // Call the API to get concert Data in the area
 // 1. Get the user location from IP
-// 2. Get the Metro ID's for the current location
-// 3. Get the Events upcoming at each of the Metro ID's.
-// days = number of days out to get events.  leave undefined for no max
+// 2. Get the Events upcoming for that location.
 //=====================================================================
-function getAreaEvents(days = DAYS_CURRENT) {
+function getAreaEvents() {
     // 1. API REQUEST - Look up the User Location based off IP Address
     // 2. API REQUEST - Find Metro Areas based off Location Data
     // 3. API REQUESTS - Request Event Info from Each Metro Area
-
     getLocationPromise()
         .then(function (locationData) {
-            // Find Metro Areas based off the location
-            return axios.get(buildMetroUrl(locationData));
+            // Get Events for our location here!!!
+            return getLocalEventsPromise(locationData);
         })
         .then(function (response) {
-            // Parse Metro Areas
-            //console.log("METRO", response);
-            metro_areas = parseMetroAreas(response);
-            return metro_areas;
-        }).then(function (areas) {
-            // Get an Array of Promises to Query Metro Areas
-            // Wait for all promises to return
-            let promises = buildEventPromiseArray(areas, days, user.page);
-            return Promise.all(promises); // Return Status once all promises have completed.
-        }).then(function (values) {
-            // Get an Array of Events in All the Metro Areas
-            let events = [];
-            values.forEach(function (response) {
-                // For Each Metro Area API Response
-                //console.log("METRO", response);
-                events.push(...parseEvents(response));
-            });
-            // Sort the Array using the current sort strategy
-            events.sort(user.sortFunc);
-            // Filter the array of duplicate events
-            events = events.filter(function (value, index, arr) {
-                return (index === arr.findIndex(i => i.id === value.id));
-            });
-            // Hide/Show Pagination as needed
+            // Parse and Display The Events
+            console.log("LOCAL CURRENT EVENTS", response);
+            let events = parseEvents(response);
             return events;
         }).then(function (events) {
-            // Cache the area events
-            user.events = events;
-            labelStatusEl.textContent = "";
-            // Display the Events on the Page
-            displayEvents(events, getResultStr());
+            labelStatusEl.textContent = ""; // Update the status label
+            user.events = events; // Cache the area events
+            displayEvents(); // Display the Events on the Page
+            mapData(user.location, user.events, ZOOM_LOCAL);
         })
         .catch(function (error) {
             //======================================================
@@ -328,82 +335,98 @@ function getArtistData(strArtist) {
             //=====================================================
             // DEBUGGING - Print the Response Objects
             //=====================================================
-            console.log("=== All API Calls Good! ===");
-            //console.log(artistResponse);
-            //console.log(discResponse);
-            //console.log(topResponse);
+            console.log("All Audio DB API Calls Good!");
 
             //=====================================================
             // API Was successful but no artists found
             // throw an error to be caught below
             //=====================================================
             if (!artistResponse.data.artists) {
-                throw new Error("No Artists Found!");
+                throw new Error("No Artists Found in Audio DB!");
             }
 
             // Parse the data we need into objects;
-            var artist = parseArtist(artistResponse.data.artists[0]); // Keep this var so it can be accessed in then
-            user.lastSearch = artist.name;
-            artist.albums = parseAlbums(discResponse.data.album);
-            artist.tracks = parseTracks(topResponse.data.track);
-            return getArtistEventsPromise(artist, DAYS_ARTIST, user.page);
+            user.artist = parseArtist(artistResponse.data.artists[0]);
+            user.lastSearch = user.artist.name;
+            user.artist.albums = parseAlbums(discResponse.data.album);
+            user.artist.tracks = parseTracks(topResponse.data.track);
+            return getArtistEventsPromise(user.artist);
         })
         .then(function (response) {
             // Parse and Display The Events
-            //console.log("Artist Events", response);
-            let events = parseEvents(response);
-            events.sort(user.sortFunc);
-            artist.events = events;
-            artist.total = response.data.resultsPage.totalEntries;
-            user.artist = artist;
-            return artist;
-        })
-        .then(function (response) {
-            // Display the Artist on the page
-            displayArtist(response);
-            // Clear the user input
+            console.log("Artist Events", response);
+            user.events = parseEvents(response);
+            mapData(user.location, user.events, ZOOM_ARTIST);
+            displayArtist(user.artist);
             inputArtistEl.value = "";
+            // Scroll to results
+            scrollWin()
         })
         .catch(function (error) {
             //=====================================================
-            // Handle all Errors here
-            // IF any of the API Calls fail we end up here
-            // Call the user defined fail function if it exists
+            // Only Executed if an error occurred
+            // If any of the API Calls fail we end up here
             //=====================================================
-            console.log("!!! ERROR !!!");
-            if (error) {
-                console.log("Error Received");
-                console.log(error);
-                labelStatusEl.classList.add("is-danger");
-                if (error.message) {
-                    labelStatusEl.textContent = error.message;
-                } else {
-                    labelStatusEl.textContent = "An error occurred. please try again";
-                }
-            } else {
-                console.log("Unknown Error");
-                console.log(error);
-            }
+            console.log("Error Received");
+            console.log(error);
+            labelStatusEl.classList.add("is-danger");
+            labelStatusEl.textContent = error.message ||
+                "An error occurred. please try again";
         });
+}
+
+//=====================================================================
+// Map the Current Location and Set Markers
+// loc = location object with lat and lon properties
+// markers = location object with lat and lon properties
+// zoom = Zoom Factor (6=Country, )
+//=====================================================================
+function mapData(loc, markers, zoom = user.zoom) {
+    if (user.map) {
+        user.map.off();
+        user.map.remove();
+    }
+
+    // Map the user location
+    user.map = L.mapquest.map('map', {
+        center: [parseFloat(loc.lat), parseFloat(loc.lon)],
+        layers: L.mapquest.tileLayer('map'),
+        zoom: zoom
+    });
+
+    // Add each marker in the array to the map
+    if (markers) {
+        markers.forEach(function (marker) {
+            var latlng = L.latLng(parseFloat(marker.lat), parseFloat(marker.lon));
+            L.marker(latlng, {
+                title: marker.name || "No Title Yet",
+            }).addTo(user.map);
+        });
+    }
+}
+
+//=====================================================================
+// Map the User Location and Set a Marker
+//=====================================================================
+function mapUser() {
+    user.location.name = "Your Approximate Location";
+    mapData(user.location, [user.location], 16);
 }
 
 //=====================================================================
 // Update the visibility of paging elements
 //=====================================================================
-function updatePaging(events) {
-    //console.log("length", events.length);
-    //console.log("total", events.total);
-    //console.log("currentPage", user.page);
+function updatePaging() {
+    let events = user.events;
     let isDisplayed = (events && events.length > MAX_DISPLAY_RESULTS);
-    //console.log("Paging isDisplayed", isDisplayed);
-    //console.log("# EVENTS", event.length);
-    let displayValue = isDisplayed ? "flex;" : "none;";
+    let displayValue = isDisplayed ? "flex" : "none";
     pageDivEl.setAttribute("style", "display: " + displayValue + ";");
 
     if (isDisplayed) {
-        // Set the Visibility of Next and Prev Buttons based on Event List size and Current Page
+        // Set the Visibility of Next/Prev based on event list size and page
         let isNextEnabled = (user.page * MAX_DISPLAY_RESULTS < events.length);
         let isPrevEnabled = (user.page !== 1);
+        // Set the Next Button
         if (isNextEnabled) {
             pageNextEl.removeAttribute("disabled", "");
             pageNextEl.setAttribute("enabled", "");
@@ -411,7 +434,7 @@ function updatePaging(events) {
             pageNextEl.setAttribute("disabled", "");
             pageNextEl.removeAttribute("enabled", "");
         }
-
+        // Set the Previous Button
         if (isPrevEnabled) {
             pagePrevEl.removeAttribute("disabled", "");
             pagePrevEl.setAttribute("enabled", "");
@@ -419,100 +442,18 @@ function updatePaging(events) {
             pagePrevEl.setAttribute("disabled", "");
             pagePrevEl.removeAttribute("enabled", "");
         }
-
-        // Set the 1st Page
-        page1El.setAttribute("data-page", 1);
-        page1El.textContent = 1;
-
-        // Set the Last Page
-        let lastPageId = Math.ceil(events.length / MAX_DISPLAY_RESULTS);
-        pageTotalEl.setAttribute("data-page", lastPageId);
-        pageTotalEl.textContent = lastPageId;
-
-        // Set the Middle Pages
-        let pages = [];
-        let upage = parseInt(user.page);
-        if (lastPageId === 1) pages = [1, undefined, undefined];
-        else if (lastPageId === 2) pages = [1, 2, undefined];
-        else if (lastPageId === 3) pages = [1, 2, 3, undefined];
-        else if (lastPageId === 4) pages = [1, 2, 3, 4, undefined];
-        else if (lastPageId === 5) pages = [1, 2, 3, 4, 5];
-
-
-        else if (upage === 1) pages = [1, 2, 3, 4, 5];
-        else {
-            if (upage < lastPageId) {
-                pages = [upage - 1, upage, upage + 1];
-            } else {
-                pages = [upage - 2, upage - 1, upage];
-            }
-        }
-        let pageObjects = [
-            { el: page1El, idx: pages[0] },
-            { el: page2El, idx: pages[1] },
-            { el: page3El, idx: pages[2] },
-            { el: page4El, idx: pages[3] },
-            { el: page5El, idx: pages[4] },
-
-
-        ];
-        // Set the data-page attribute, text and classes for links
-        pageObjects.forEach(function (pageObject) {
-            if (pageObject.idx) {
-                pageObject.el.textContent = pageObject.idx;
-                pageObject.el.setAttribute("data-page", pageObject.idx);
-                if (pageObject.idx === upage) {
-                    pageObject.el.classList.add("is-current");
-                } else {
-                    pageObject.el.classList.remove("is-current");
-                }
-                pageObject.el.setAttribute("style", "display: initial;");
-            } else {
-                pageObject.el.setAttribute("style", "display: none;");
-            }
-        });
+        pageInputEl.value = user.page;
+        pageLastEl.textContent = Math.ceil(events.length / MAX_DISPLAY_RESULTS);
     }
-}
-
-//=====================================================================
-// Returns Promises to query Metro Areas for Events
-// areas = array of Metro Area Objects from soundkick
-// days = number of days out to search. leave undefined for no max date
-//=====================================================================
-function buildEventPromiseArray(areas, days, page = 1) {
-    let promises = [];
-
-    // Create promises to get the Events for Each Metro Area
-    // returns the promises array
-    areas.forEach(function (area) {
-        let url = "https://api.songkick.com/api/3.0/metro_areas/" + area.id +
-            "/calendar.json?" + getQuery(days, page, MAX_QUERY_RESULTS);
-        promises.push(axios.get(url));
-    })
-    return promises;
-}
-
-//=====================================================================
-// Returns URL to get a list of Metro Areas based on location
-//=====================================================================
-function buildMetroUrl(location) {
-    // Get Location Info
-    let queryUrl = "https://api.songkick.com/api/3.0/search/locations.json?";
-    let sk2 = "&apikey=" + sk;
-    // Use Latitude and Longitude if available else use city name
-    if (location.lat && location.lon) {
-        queryUrl += "location=geo:" + location.lat + "," + location.lon + sk2;
-    } else {
-        queryUrl += "query=" + location.city.replace(" ", "+") + sk2;
-    }
-    return queryUrl;
-}
+};
 
 //=====================================================
-// Parse the Location Data
+// Parse the Location Data from API
+// returns a location object { city, zip, lat, lon }
 //=====================================================
 function parseLocation(response) {
     var locationData = {
+        name: response.data.city,
         city: response.data.city,
         zip: response.data.postal_code,
         lat: parseFloat(response.data.latitude),
@@ -522,62 +463,44 @@ function parseLocation(response) {
 }
 
 //=====================================================
-// Parse the events for an Artist or Metro Area
+// Parse TicketMaster events into our own event object
+// returns: an Array of events objects
 //=====================================================
 function parseEvents(response) {
     let respEvents = [];
-    let events = response.data.resultsPage.results.event;
+    if (!response || !response.data || !response.data._embedded) return respEvents;
+
+    let events = response.data._embedded.events;
     if (!events) return respEvents;
 
-    console.log("EVT", response);
+    // console.log("EVT", response);
     events.forEach(function (evt) {
+        //console.log("TicketMaster Event Details", evt);
+        let venue = evt._embedded.venues[0];
+        //console.log("venue", venue);
         respEvents.push({
             id: evt.id,
-            name: evt.displayName,
+            name: evt.name,
             type: evt.type,
-            uri: evt.uri,
-            startDate: evt.start.date,
-            startTime: evt.start.time,
-            venue: evt.venue.displayName,
-            venueUri: evt.venue.uri,
-            city: evt.location.city,
-            lat: parseFloat(evt.location.lat),
-            lon: parseFloat(evt.location.lng),
-            total: evt.total,
-            distance: distance(user.location.lat, user.location.lon,
-                evt.location.lat, evt.location.lng)
+            uri: evt.url,
+            startDate: evt.dates.start.localDate,
+            startTime: evt.dates.start.localTime,
+            venue: venue.name,
+            venueUri: venue.url,
+            city: venue.city.name,
+            state: venue.state.stateCode,
+            lat: parseFloat(venue.location.latitude),
+            lon: parseFloat(venue.location.longitude),
+            distance: parseFloat(venue.distance),
         });
     });
     return respEvents;
 }
 
 //=====================================================
-// Parse the API response into an array of Metro Areas
-//=====================================================
-function parseMetroAreas(response, limit = MAX_METROS) {
-    let areas = [];
-    let locations = response.data.resultsPage.results.location;
-    if (!locations) return areas;
-
-    let index = 0;
-    locations.forEach(function (location) {
-        if (index++ >= limit) return;
-        areas.push({
-            id: location.metroArea.id,
-            lat: parseFloat(location.metroArea.lat),
-            lon: parseFloat(location.metroArea.lng),
-            metroName: location.metroArea.displayName,
-            cityName: location.city.displayName
-        });
-        //console.log("METRO = ", location.metroArea.displayName, "-", location.city.displayName);
-    });
-    //console.table(areas);
-    return areas;
-}
-
-//=====================================================
-// PARSE ARTIST
-//   Create an object with all the fields we care about
+// PARSE ARTIST - Parse Audio DB for all the fields we 
+//   care about
+// returns: an artist object
 //=====================================================
 function parseArtist(artistData) {
     return artist = {
@@ -597,9 +520,10 @@ function parseArtist(artistData) {
 }
 
 //=====================================================
-// PARSE ALBUMS
-//   Create an empty array and push a new album 
-//   object for each iteration
+// PARSE ALBUMS with data from Audio DB
+//   Create an empty array and push a new album object
+//   for each iteration
+// returns: Array of album objects
 //=====================================================
 function parseAlbums(responseAlbums) {
     let albums = []; // Create an Empty Albums Array
@@ -619,7 +543,8 @@ function parseAlbums(responseAlbums) {
 }
 
 //======================================================
-// PARSE TOP TRACKS
+// PARSE TOP TRACKS from Audio DB data
+// returns: Array of track objects
 //======================================================
 function parseTracks(topTracks) {
     let tracks = [];
@@ -642,91 +567,117 @@ function parseTracks(topTracks) {
 
 //=====================================================================
 // Update the HTML to display event info
+// Display a single page of events on the page
 //=====================================================================
-function displayEvents(events, heading, limit = MAX_DISPLAY_RESULTS) {
-    const displayNewDayHeading = true;
+function displayEvents(displayNewDayHeading = true) {
+    let events = user.events;
+    let heading = getResultStr();
+    let limit = MAX_DISPLAY_RESULTS;
 
     // Set the Event Section Heading
     eventHeadEl.textContent = heading;
     // Clear the current Event List from HTML
     eventListEl.innerHTML = "";
-    // Keep track of iteration for limit
+    // Keep track of iteration in order to process at most 'limit' results
     let index = 0;
-    // Keep track of date for date heading
+    // Keep track of date for detecting new day heading
     let lastOutputTime = "";
+    // Get the index of the first result in the list
     let pageStart = (user.page - 1) * MAX_DISPLAY_RESULTS;
+    // Get a copy of the current page of events
     let pageEvents = events.slice(pageStart, pageStart + limit);
-    // For Each Event in the Array - Create Elements and add them to the page
-    pageEvents.forEach(function (event) {
-        if (index++ >= limit) return;
 
-        let div = document.createElement("div");
-        div.setAttribute("class", "box");
-        // h1 - Event Name
-        let h1 = document.createElement("h4");
+    // For Each Event in the Current Page Array:
+    //   Create and display HTML Elements for the current event
+    pageEvents.forEach(function (event) {
+        if (index++ >= limit) return;   // Check to see if we are at the limit
+
+        let div = createEl("div", "box"); // Create an event container div
+        let h1 = createEl("h4", "title"); // Create a h1 for Event Name
         div.appendChild(h1);
-        h1.classList.add("title");
-        // a - Link to Event Details.
-        let headLink = document.createElement("a");
+
+        // Create a Link to Event Details.
+        let headLink = createLink(event.name, "title event-link", event.uri);
         h1.appendChild(headLink);
-        headLink.setAttribute("class", "event-link");
-        headLink.setAttribute("href", event.uri);
-        headLink.setAttribute("target", "_blank");
-        headLink.textContent = event.name;
-        // Local Check
+
+        // if event is close by... Create a Local Event Span
         if (event.distance < MAX_DISTANCE_LOCAL) {
             headLink.classList.add("has-text-weight-bold");
-            let span = document.createElement("span");
+            let span = createEl("span", "local-event", "LOCAL");
             h1.appendChild(span);
-            span.textContent = " LOCAL!";
         }
-        // h3 - Event Type
-        let h3 = document.createElement("h6");
-        div.appendChild(h3);
-        h3.classList.add("subtitle");
-        h3.textContent = event.type;
-        // p1 - City
-        let p1 = document.createElement("p");
-        div.appendChild(p1);
-        p1.textContent = event.city;
-        // p2 - Start Date/Time Formatted
-        let p2 = document.createElement("p");
-        div.appendChild(p2);
-        let inputMoment = moment(event.startDate + event.startTime, "YYYYMMDDHHmm");
-        let outputTime = inputMoment.format('dddd MMMM Do @ h:mm a');
-        p2.textContent = outputTime;
-        // p3 - Distance to Event
-        let p3 = document.createElement("p");
-        div.appendChild(p3);
-        p3.textContent = "Distance to Event: " + event.distance.toFixed(1) + "mi";
-        // a - Venue
-        let a = document.createElement("a");
-        div.appendChild(a);
-        a.setAttribute("class", "venue-link");
-        a.setAttribute("href", event.venueUri);
-        a.setAttribute("target", "_blank");
-        a.textContent = event.venue;
+
+        // Create a p for City, State, Start Date/Time, Distance to Event
+        let inputMoment = moment(event.startDate + event.startTime, "YYYY-MM-DDHH:mm:ss");
+        let outputTime = inputMoment.format('ddd, MMM Do @ h:mm a');
+        let pCity = document.createElement("p");
+        pCity.innerHTML = outputTime + "<br>" +
+            event.city + ", " + event.state + "<br>" +
+            "Distance to Event: " + event.distance.toFixed(1) + "mi";
+        div.appendChild(pCity);
+
+        // Create a Venue Link or Span if no link available
+        let venueLink = createLink(event.venue, "venue-link", event.venueUri);
+        div.appendChild(venueLink);
 
         // if displayNewDayHeading is enabled...
-        // Add a header div for each new day in the listings
+        // Add a header div when we encounter a new day in the listings
         if (displayNewDayHeading && lastOutputTime !== event.startDate) {
-            let dayMarker = document.createElement("div");
-            eventListEl.appendChild(dayMarker);
-            dayMarker.classList.add("dayMarker");
-            let dayHeader = document.createElement("h1");
-            dayMarker.appendChild(dayHeader);
-            dayHeader.classList.add("title");
-            dayHeader.textContent = moment(event.startDate, "YYYY-MM-DD").format("dddd MMMM Do");
+            let dayMarkerContainer = createEl("div", "dayMarker");
+            eventListEl.appendChild(dayMarkerContainer);
+            let dayHeading = createEl("h1", "tite", moment(event.startDate, "YYYY-MM-DD").format("dddd, MMMM Do YYYY"));
+            dayMarkerContainer.appendChild(dayHeading);
         }
+
+        // Store the date for the next iteration of our new day heading check
         lastOutputTime = event.startDate;
 
+        // Append the event to the Event List
         eventListEl.appendChild(div);
     });
-    updatePaging(events);
+
+    // Update the paging to reflect the new event list
+    updatePaging();
+}
+
+//=====================================================================
+// Create an HTML Link with the desired attributes.
+// If no link is provided a span is created
+// returns: an html element (a)
+//=====================================================================
+function createLink(text, cls, href) {
+    // Set the class, href, and target for a newly created link element
+    let tag = "a";
+    if (!href) {
+        tag = "span";
+    }
+    let el = document.createElement(tag);
+    el.textContent = text;
+    el.setAttribute("class", cls);
+    if (href) {
+        el.setAttribute("href", href);
+        el.setAttribute("target", "_blank");
+    }
+    return el;
+}
+
+//=====================================================================
+// Create an HTML Element with the desired attributes
+// returns: an html element
+//=====================================================================
+function createEl(tag, cls, text = undefined) {
+    let el = document.createElement(tag);
+    // if text is provided set the text
+    if (text) el.textContent = text;
+    // if classes provided set the class
+    if (cls) el.setAttribute("class", cls);
+
+    return el;
 }
 
 //=====================================================================
 // Update the HTML to display the artist info
+// returns: none
 //=====================================================================
 function displayArtist(artist) {
     //console.log("Displaying Artist");
@@ -741,10 +692,8 @@ function displayArtist(artist) {
 
     // Display the artist details table
     displayArtistTable(artist);
-    // Cache the artist events
-    user.events = artist.events;
     // Display concerts
-    displayEvents(artist.events, getResultStr());
+    displayEvents();
     // Display the album discography list
     displayAlbums(artist.albums);
     // Display the top tracks
@@ -757,7 +706,8 @@ function displayArtist(artist) {
 }
 
 //=====================================================================
-// Update the HTML to display the artist details table
+// Update the HTML to display details for the artist table
+// returns: none
 //=====================================================================
 function displayArtistTable(artist) {
     // Configure Each parameter in the table
@@ -790,6 +740,7 @@ function displayArtistTable(artist) {
 
 //====================================================================
 // Add the Album list to the HTML
+// returns: none
 //====================================================================
 function displayAlbums(albums) {
     discHeadEl.textContent = "Last " + albums.length + " Albums";
@@ -804,6 +755,7 @@ function displayAlbums(albums) {
 
 //====================================================================
 // Add the top tracks list to the HTML
+// returns: none
 //====================================================================
 function displayTracks(tracks) {
     topListEl.innerHTML = "";
@@ -836,6 +788,7 @@ function displayTracks(tracks) {
 
 //====================================================================
 // Return the iframe html for a youtube video
+// returns: HTML for a youtube iframe in string form
 //====================================================================
 function getYouTube(src) {
     if (!src) {
@@ -844,82 +797,6 @@ function getYouTube(src) {
         src = src.replace("www.youtube.com/", "www.youtube.com/embed/");
     }
     return '<iframe src="' + src + '" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
-}
-
-//====================================================================
-// Return the full query string
-//====================================================================
-function getQuery(days, page, perPage) {
-    return "apikey=" + sk + getDateQuery(days) + getPageQuery(page, perPage);
-}
-
-// ===================================================================
-// Return the query for min_date and max_date
-// days = days from today's date
-// ===================================================================
-function getDateQuery(days) {
-    if (!days) return ""; // Return Empty String if Days not defined
-
-    let m = moment().clone().add(days, "days");
-    return "&min_date=" + moment().format("YYYY-MM-DD") +
-        "&max_date=" + m.format("YYYY-MM-DD");
-}
-
-//=========================================================
-// Return the query for paging
-// 1. page = page number starting at 1
-// 2. perPage = Results per Page
-//=========================================================
-function getPageQuery(page, perPage) {
-    let str = "";
-    if (page) { str += "&page=" + page; }
-    if (perPage) { str += "&per_page=" + perPage; }
-    return str;
-}
-
-//=========================================================
-// Sort by Distance from Current Location
-//=========================================================
-function sortDistance(a, b) {
-    return a.distance - b.distance;
-}
-
-//=========================================================
-// Sort by Event Date
-//=========================================================
-function sortDate(a, b) {
-    return a.startDate.localeCompare(b.startDate);
-}
-
-//=========================================================
-// Sort by Event Date then Distance from Current Location
-//=========================================================
-function sortDateDistance(a, b) {
-    let ret = sortDate(a, b);
-    if (ret == 0) return sortDistance(a, b);
-    return ret;
-}
-
-//=========================================================
-// Sort by Distance then Date
-//=========================================================
-function sortDistanceDate(a, b) {
-    let ret = sortDistance(a, b);
-    if (ret == 0) return sortDate(a, b);
-    return ret;
-}
-
-//=========================================================
-// Calculate the distance between 2 Locations (lat,lon)
-//=========================================================
-function distance(lat1, lon1, lat2, lon2) {
-    var p = 0.017453292519943295;    // Math.PI / 180
-    var c = Math.cos;
-    var a = 0.5 - c((lat2 - lat1) * p) / 2 +
-        c(lat1 * p) * c(lat2 * p) *
-        (1 - c((lon2 - lon1) * p)) / 2;
-
-    return 12742 * Math.asin(Math.sqrt(a)) * KM_TO_MI; // 2 * R; R = 6371 km * KM_TO_MI = MI
 }
 
 // ===================================================================
@@ -934,9 +811,16 @@ function onError(error) {
     labelStatusEl.classList.add("is-danger");
 }
 
+// making it a little harder for key scrapers
+function getKey(str) {
+    return str.split("").reverse().join("");
+}
+
 /**************************************/
 /* MAIN - Code that runs at startup   */
 /**************************************/
+// Get Concert Data for the current location
+L.mapquest.key = getKey(mq_key);
 
 // Get Concert Data for the current location
 getAreaEvents();
