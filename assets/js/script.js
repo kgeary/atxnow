@@ -229,7 +229,6 @@ function getLocationPromise() {
         .then(function (response) {
             user.location = parseLocation(response);
             user.lastSearch = user.location.city;
-            mapData(user.location, [user.location]);
             return user.location;
         });
 }
@@ -294,6 +293,7 @@ function getAreaEvents() {
             labelStatusEl.textContent = ""; // Update the status label
             user.events = events; // Cache the area events
             displayEvents(); // Display the Events on the Page
+            mapData(user.location, user.events, ZOOM_LOCAL);
         })
         .catch(function (error) {
             //======================================================
@@ -356,6 +356,7 @@ function getArtistData(strArtist) {
             // Parse and Display The Events
             console.log("Artist Events", response);
             user.events = parseEvents(response);
+            mapData(user.location, user.events, ZOOM_ARTIST);
             displayArtist(user.artist);
             inputArtistEl.value = "";
             // Scroll to results
@@ -467,6 +468,8 @@ function parseLocation(response) {
 //=====================================================
 function parseEvents(response) {
     let respEvents = [];
+    if (!response || !response.data || !response.data._embedded) return respEvents;
+
     let events = response.data._embedded.events;
     if (!events) return respEvents;
 
