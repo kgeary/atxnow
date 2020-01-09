@@ -6,9 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>ATX Now - Your Guide to Shows in Austin</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
-    <link rel="stylesheet" href="assets/css/bulma.css">
-    <!-- <link rel="stylesheet" href="assets/css/bulma.min.css"> -->
+    <!-- MAP RELATED FILES: mapquest.js and mapquest.css -->
+    <script src="https://api.mqcdn.com/sdk/mapquest-js/v1.3.2/mapquest.js"></script>
+    <link type="text/css" rel="stylesheet" href="https://api.mqcdn.com/sdk/mapquest-js/v1.3.2/mapquest.css"/>
+    <link rel="stylesheet" href="assets/css/bulma.min.css">
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 
@@ -45,6 +46,8 @@
             </div>
         </div>
     </section>
+
+    <div id="map"></div>
 
     <!-- Main Body -->
     <main>
@@ -146,10 +149,8 @@
         </section>
     </main>
 
-
-    </div>
     <!-- Footer -->
-    <footer class="footer">`
+    <footer class="footer">
         <div class="content has-text-centered">
             <div class="columns">
                 <div class="column">
@@ -168,8 +169,6 @@
             </div>
         </div>
     </footer>
-    <!-- Font Awesome for Icons -->
-    <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
     <!-- axios for AJAX -->
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <!-- Moment for time formatting -->

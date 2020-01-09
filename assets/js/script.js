@@ -7,7 +7,10 @@ const DAYS_CURRENT = 7;         // How many days to show for current events
 const DAYS_ARTIST = 365;        // How many days to show for artist events
 const KM_TO_MI = 0.6213711922;  // KM to Miles conversion factor
 const MAX_DISTANCE_LOCAL = 15;  // MAX Distance in Miles to be considered local
-
+const ZOOM_ARTIST = 3;
+const ZOOM_LOCAL = 11;
+const ZOOM_DEFAULT = 12;
+const mq_key = "VRD3y4E9VSKqK3emqpyfILrJCl7sqvg1";
 //==============================================================================
 // HTML Elements
 //==============================================================================
@@ -78,6 +81,8 @@ const artistTableParams = [
 let user = {
     location: undefined,
     artist: undefined,
+    map: undefined,
+    zoom: ZOOM_DEFAULT,
     sortFunc: sortDateDistance,
     page: 1,
     lastSearch: "",
@@ -231,6 +236,7 @@ function getLocationPromise() {
         .then(function (response) {
             user.location = parseLocation(response);
             user.lastSearch = user.location.city;
+            mapData(user.location, [user.location], user.zoom);
             return user.location;
         });
 }
@@ -377,6 +383,44 @@ function getArtistData(strArtist) {
 }
 
 //=====================================================================
+// Map the Current Location and Set Markers
+// loc = location object with lat and lon properties
+// markers = location object with lat and lon properties
+// zoom = Zoom Factor (6=Country, )
+//=====================================================================
+function mapData(loc, markers, zoom = user.zoom) {
+    if (user.map) {
+        user.map.off();
+        user.map.remove();
+    }
+
+    // Map the user location
+    user.map = L.mapquest.map('map', {
+        center: [parseFloat(loc.lat), parseFloat(loc.lon)],
+        layers: L.mapquest.tileLayer('map'),
+        zoom: zoom
+    });
+
+    // Add each marker in the array to the map
+    if (markers) {
+        markers.forEach(function (marker) {
+            var latlng = L.latLng(parseFloat(marker.lat), parseFloat(marker.lon));
+            L.marker(latlng, {
+                title: marker.name || "No Title Yet",
+            }).addTo(user.map);
+        });
+    }
+}
+
+//=====================================================================
+// Map the User Location and Set a Marker
+//=====================================================================
+function mapUser() {
+    user.location.name = "Your Approximate Location";
+    mapData(user.location, [user.location], 16);
+}
+
+//=====================================================================
 // Update the visibility of paging elements
 //=====================================================================
 function updatePaging() {
@@ -464,6 +508,7 @@ function updatePaging() {
 //=====================================================
 function parseLocation(response) {
     var locationData = {
+        name: response.data.city,
         city: response.data.city,
         zip: response.data.postal_code,
         lat: parseFloat(response.data.latitude),
@@ -858,9 +903,16 @@ function onError(error) {
     labelStatusEl.classList.add("is-danger");
 }
 
+// making it a little harder for key scrapers
+function getKey(str) {
+    return str.split("").reverse().join("");
+}
+
 /**************************************/
 /* MAIN - Code that runs at startup   */
 /**************************************/
+// Get Concert Data for the current location
+L.mapquest.key = getKey(mq_key);
 
 // Get Concert Data for the current location
 getAreaEvents();

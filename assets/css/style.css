@@ -52,6 +52,13 @@ main {
     list-style-type: none;
 }
 
+#map {
+    display: block;
+    overflow: hidden;
+    height: 300px;
+    width: 400px;
+}
+
 .divider {
     margin-top: 3rem;
 }
