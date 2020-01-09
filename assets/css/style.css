@@ -79,11 +79,6 @@ main {
     margin-top: 3rem;
 }
 
-iframe {
-    width: 500px;
-    height: 300px;
-}
-
 #pageInput {
     width: 70px;
     text-align: center;

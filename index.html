@@ -8,7 +8,7 @@
     <title>ATX Now - Your Guide to Shows in Austin</title>
     <!-- MAP RELATED FILES: mapquest.js and mapquest.css -->
     <script src="https://api.mqcdn.com/sdk/mapquest-js/v1.3.2/mapquest.js"></script>
-    <link type="text/css" rel="stylesheet" href="https://api.mqcdn.com/sdk/mapquest-js/v1.3.2/mapquest.css"/>
+    <link type="text/css" rel="stylesheet" href="https://api.mqcdn.com/sdk/mapquest-js/v1.3.2/mapquest.css" />
     <link rel="stylesheet" href="assets/css/bulma.min.css">
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
@@ -47,83 +47,103 @@
         </div>
     </section>
 
-    <div id="map"></div>
-
     <!-- Main Body -->
     <main>
+        <section class="section">
 
-        <!-- Content container -->
-        <section class="section tile is-ancestor">
+            <!-- Content container -->
+            <div class="container tile is-ancestor">
 
-            <!-- Column for Info, Disco, and Tracks -->
-            <div id="artistInfo" class="column tile is-child has-text-centered">
-                <!-- Artist Info Box -->
-                <div class="box columns level">
-                    <div class="column is-6 level-item">
-                        <!-- Artist Image -->
-                        <div class="image tile is-child">
-                            <img id="artistThumb" class="image" alt="Artist Image">
+                <!-- Content Div -->
+                <div class="tile is-parent is-vertical">
+
+                    <!-- Map, Artist info, Sample -->
+                    <div class="tile is-parent">
+
+                        <!-- Map & Sample -->
+                        <div class="tile is-parent is-vertical">
+
+                            <!-- Map -->
+                            <div class="tile is-child">
+                                <div id="map"></div>
+                            </div>
+
+                            <!-- Sample -->
+                            <div class="tile is-child">
+                                <!-- Top Tracks Here -->
+                                <div id="topBox" class="content is-outlined has-text-left">
+                                    <h1 id="topHead" class="title is-2"></h1>
+                                    <div class="tile is-ancestor">
+                                        <ul id="topList" class="tile is-parent is-vertical is-marginless"></ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- MapSample Closes -->
                         </div>
-                    </div>
 
-                    <div class="column is-6 level-item">
                         <!-- Artist Info -->
-                        <h1 id="artistName" class="title is-1 has-text-left"></h1>
-                        <table class="table">
-                            <tbody id="artistTable"></tbody>
-                        </table>
+                        <div id="artistInfo" class="tile is-parent has-text-centered">
+                            <div class="box">
+                                <!-- <div class="column is-6 level-item"> -->
+                                <!-- Artist Image -->
+                                <div class="image tile is-child">
+                                    <img id="artistThumb" class="image" alt="Artist Image">
+                                    <!-- </div> -->
+                                </div>
+
+                                <!-- <div class="column is-6 level-item"> -->
+                                <!-- Artist Info -->
+                                <h1 id="artistName" class="title is-1 has-text-left"></h1>
+                                <table class="table">
+                                    <tbody id="artistTable"></tbody>
+                                </table>
+                                <!-- </div> -->
+                            </div>
+
+                        </div>
+
+                        <!-- MapArtistSample Closes -->
                     </div>
+
+                    <!-- Artist Bio -->
+                    <div class="tile is-child">
+                        <!-- Discography Here -->
+                        <div id="discBox" class="content is-outlined has-text-left">
+                            <h1 id="discHead" class="title is-2"></h1>
+                            <div class="tile is-ancestor">
+                                <ul id="discList" class="tile is-parent is-vertical is-marginless"></ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Content Div closes -->
                 </div>
 
-                <p class="divider"></p>
-
-                <!-- Discography and Top Tracks Container -->
+                <!-- Event Div -->
                 <div class="tile is-parent">
-                    <!-- Discography Here -->
-                    <div id="discBox" class="content is-outlined has-text-left tile is-child">
-                        <h1 id="discHead" class="title is-2"></h1>
+                    <a id="topEvent"></a>
+                    <div id="eventBox" class="content is-outlined has-text-left">
+                        <h1 id="eventHead" class="title is-2"></h1>
                         <div class="tile is-ancestor">
-                            <ul id="discList" class="tile is-parent is-vertical is-marginless"></ul>
+                            <ul id="eventList" class="tile is-parent is-vertical is-marginless"></ul>
                         </div>
-                    </div>
-
-                    <p class="divider"></p>
-
-                    <!-- Top Tracks Here -->
-                    <div id="topBox" class="content is-outlined has-text-left tile is-child">
-                        <h1 id="topHead" class="title is-2"></h1>
-                        <div class="tile is-ancestor">
-                            <ul id="topList" class="tile is-parent is-vertical is-marginless"></ul>
-                        </div>
+                        <nav id="pageDiv" class="pagination" role="navigation" aria-label="pagination">
+                            <a id="pagePrev" class="pagination-previous">Previous</a>
+                            <div class="pageInputGroup pagination-list">
+                                <input type="number" id="pageInput" class="input" min="1">
+                                <a id="pageGo" class="pagination-link">Go</a>
+                                <span>of</span>
+                                <a id="pageLast" class="pagination-link">X</a>
+                            </div>
+                            <a id="pageNext" class="pagination-next">Next</a>
+                        </nav>
                     </div>
                 </div>
-            </div>
-
-            <p class="divider"></p>
-
-            <!-- Column for events -->
-            <div class="column tile is-parent">
-                <!-- Events Here -->
-                <a id="topEvent"></a>
-                <div id="eventBox" class="content is-outlined has-text-left">
-                    <h1 id="eventHead" class="title is-2"></h1>
-                    <div class="tile is-ancestor">
-                        <ul id="eventList" class="tile is-parent is-vertical is-marginless"></ul>
-                    </div>
-                    <nav id="pageDiv" class="pagination" role="navigation" aria-label="pagination">
-                        <a id="pagePrev" class="pagination-previous">Previous</a>
-                        <div class="pageInputGroup pagination-list">
-                            <input type="number" id="pageInput" class="input" min="1">
-                            <a id="pageGo" class="pagination-link">Go</a>
-                            <span>of</span>
-                            <a id="pageLast" class="pagination-link">X</a>
-                        </div>
-                        <a id="pageNext" class="pagination-next">Next</a>
-                    </nav>
-                </div>
-            </div>
 
         </section>
+        </div>
+
     </main>
 
     <!-- Footer -->
