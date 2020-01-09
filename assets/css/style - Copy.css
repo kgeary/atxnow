@@ -10,8 +10,17 @@ body {
     font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
 }
 
-#ATX-Title {
-    color: whitesmoke;
+main {
+    flex: 1;
+}
+
+iframe {
+    width: 500px;
+    height: 300px;
+}
+
+.control {
+    box-shadow: 5px 5px 5px rgba(128, 128, 128, 0.596)
 }
 
 .has-bg-img {
@@ -32,22 +41,22 @@ body {
     font-size: small;
 }
 
-main {
-    flex: 1;
-}
-
-#artistInfo {
-    display: none;
+.divider {
     margin-top: 3rem;
-}
-
-.control {
-    box-shadow: 5px 5px 5px rgba(128, 128, 128, 0.596)
 }
 
 .table, .box {
     background-color: #f19429;
     border-radius: 10px;
+}
+
+#ATX-Title {
+    color: whitesmoke;
+}
+
+#artistInfo {
+    display: none;
+    margin-top: 3rem;
 }
 
 #artistTable td {
@@ -68,22 +77,6 @@ main {
     list-style-type: none;
 }
 
-#map {
-    display: block;
-    overflow: hidden;
-    height: 300px;
-    width: 400px;
-}
-
-.divider {
-    margin-top: 3rem;
-}
-
-iframe {
-    width: 500px;
-    height: 300px;
-}
-
 #pageInput {
     width: 70px;
     text-align: center;
@@ -99,15 +92,6 @@ iframe {
     iframe {
         width: 100%;
     }
-    
-    .footer {
-        padding: 1rem 0rem;
-    }
-
-    .map {
-        width: 100%;
-    }
-
     #pageInput {
         width: 50px;
         text-align: center;

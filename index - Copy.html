@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>ATX Now - Your Guide to Shows in Austin</title>
+    <link rel="stylesheet" href="assets/css/bulma.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+
+<body>
+    <!-- Title Block -->
+    <section id="heroBlock" class="hero is-large has-bg-img">
+        <div class="hero-body">
+            <div class="container has-text-centered">
+                <h1 id="ATX-Title" class="is-1 title">
+                    ATX Now
+                </h1>
+                <h2 class="subtitle">
+                    Your guide to what's going on in Austin
+                </h2>
+
+                <!-- Artist Search -->
+                <section class="section is-paddingless">
+                    <div class="container">
+                        <!-- SEARCH FIELD -->
+                        <div class="field has-addons has-addons-centered">
+                            <p class="control">
+                                <input id="inputArtist" class="input" type="text" placeholder="Search for Artists">
+                            </p>
+                            <p class="control">
+                                <button id="btnSearch" class="button is-danger">
+                                    Search
+                                </button>
+                            </p>
+                        </div>
+                        <!-- Status -->
+                        <p id="labelStatus" class="has-text-centered help"></p>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Body -->
+    <main>
+
+        <!-- Content container -->
+        <section class="section tile is-ancestor">
+
+            <!-- Column for Info, Disco, and Tracks -->
+            <div id="artistInfo" class="column tile is-child has-text-centered">
+                <!-- Artist Info Box -->
+                <div class="columns level">
+                    <div class="column is-6 level-item">
+                        <!-- Artist Image -->
+                        <div class="image tile is-child">
+                            <img id="artistThumb" class="image" alt="Artist Image">
+                        </div>
+                    </div>
+
+                    <div class="column is-6 level-item">
+                        <!-- Artist Info -->
+                        <h1 id="artistName" class="title is-1 has-text-left"></h1>
+                        <table class="table">
+                            <tbody id="artistTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <p class="divider"></p>
+
+                <!-- Discography and Top Tracks Container -->
+                <div class="tile is-parent">
+                    <!-- Discography Here -->
+                    <div id="discBox" class="content is-outlined has-text-left tile is-child">
+                        <h1 id="discHead" class="title is-2"></h1>
+                        <div class="tile is-ancestor">
+                            <ul id="discList" class="tile is-parent is-vertical is-marginless"></ul>
+                        </div>
+                    </div>
+
+                    <p class="divider"></p>
+
+                    <!-- Top Tracks Here -->
+                    <div id="topBox" class="content is-outlined has-text-left tile is-child">
+                        <h1 id="topHead" class="title is-2"></h1>
+                        <div class="tile is-ancestor">
+                            <ul id="topList" class="tile is-parent is-vertical is-marginless"></ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <p class="divider"></p>
+
+            <!-- Column for events -->
+            <div class="column tile is-parent">
+                <!-- Events Here -->
+                <a id="topEvent"></a>
+                <div id="eventBox" class="content is-outlined has-text-left">
+                    <h1 id="eventHead" class="title is-2"></h1>
+                    <div class="tile is-ancestor">
+                        <ul id="eventList" class="tile is-parent is-vertical is-marginless"></ul>
+                    </div>
+                    <nav id="pageDiv" class="pagination" role="navigation" aria-label="pagination">
+                        <a id="pagePrev" class="pagination-previous">Previous</a>
+                        <div class="pageInputGroup pagination-list">
+                            <input type="number" id="pageInput" class="input" min="1">
+                            <a id="pageGo" class="pagination-link">Go</a>
+                            <span>of</span>
+                            <a id="pageLast" class="pagination-link">X</a>
+                        </div>
+                        <a id="pageNext" class="pagination-next">Next</a>
+                    </nav>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">`
+        <div class="content has-text-centered">
+            <div class="columns">
+                <div class="column">
+                    Artist Info provided<br>
+                    <a href="https://www.theaudiodb.com/" target="_blank">by: TheAudioDB</a>
+                </div>
+                <div class="column">
+                    <strong>ATX Now</strong><br>
+                    by Josh, Kevin, and Z.
+                </div>
+
+                <div class="column">
+                    Concert Listings provided by:<br>
+                    <a href="https://www.ticketmaster.com/" target="_blank">Ticketmaster</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Font Awesome for Icons -->
+    <!-- <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script> -->
+    <!-- axios for AJAX -->
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <!-- Moment for time formatting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+    <!-- script.js -->
+    <script src="assets/js/script.js"></script>
+</body>
+
+</html>
