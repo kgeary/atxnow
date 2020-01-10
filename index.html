@@ -9,6 +9,13 @@
     <!-- MAP RELATED FILES: mapquest.js and mapquest.css -->
     <script src="https://api.mqcdn.com/sdk/mapquest-js/v1.3.2/mapquest.js"></script>
     <link type="text/css" rel="stylesheet" href="https://api.mqcdn.com/sdk/mapquest-js/v1.3.2/mapquest.css" />
+    <!-- Cluster -->
+    <script src="https://unpkg.com/leaflet.markercluster@1.0.6/dist/leaflet.markercluster.js"></script>
+    <link type="text/css" rel="stylesheet"
+        href="https://unpkg.com/leaflet.markercluster@1.0.6/dist/MarkerCluster.css" />
+    <link type="text/css" rel="stylesheet"
+        href="https://unpkg.com/leaflet.markercluster@1.0.6/dist/MarkerCluster.Default.css" />
+
     <link rel="stylesheet" href="assets/css/bulma.min.css">
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
@@ -40,7 +47,7 @@
                             </p>
                         </div>
                         <!-- Status -->
-                        <p id="labelStatus" class="has-text-centered help"></p>
+                        <p id="labelStatus" class="has-text-centered help"> </p>
                     </div>
                 </section>
             </div>
@@ -49,86 +56,60 @@
 
     <!-- Main Body -->
     <main>
-        <section class="section">
+        <!-- Content container -->
+        <div class="container">
+            <h1 id="eventHead" class="title has-text-centered"></h1>
+            <div class="columns columns-container">
+                <!-- Content Div Map, Info, Disc, Tracks -->
+                <div class="column is-5">
+                    <!-- Map -->
+                    <div id="mapBox" class="box is-fullwidth">
+                        <h1 id="mapHead" class="title is-4"></h1>
+                        <div id="map" class="image"></div>
+                    </div>
 
-            <!-- Content container -->
-            <div class="container tile is-ancestor">
-
-                <!-- Content Div -->
-                <div class="tile is-parent is-vertical">
-
-                    <!-- Map, Artist info, Sample -->
-                    <div class="tile is-parent">
-
-                        <!-- Map & Sample -->
-                        <div class="tile is-parent is-vertical">
-
-                            <!-- Map -->
-                            <div class="tile is-child">
-                                <div id="map"></div>
-                            </div>
-
-                            <!-- Sample -->
-                            <div class="tile is-child">
-                                <!-- Top Tracks Here -->
-                                <div id="topBox" class="content is-outlined has-text-left">
-                                    <h1 id="topHead" class="title is-2"></h1>
-                                    <div class="tile is-ancestor">
-                                        <ul id="topList" class="tile is-parent is-vertical is-marginless"></ul>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- MapSample Closes -->
+                    <!-- Artist Info -->
+                    <div id="artistInfo">
+                        <!-- Artist Image -->
+                        <div class="image box" style="width:100%;">
+                            <img id="artistThumb" class="image" alt="Artist Image">
+                            <h1 id="artistName" class="title is-4 has-text-left"></h1>
                         </div>
-
                         <!-- Artist Info -->
-                        <div id="artistInfo" class="tile is-parent has-text-centered">
-                            <div class="box">
-                                <!-- <div class="column is-6 level-item"> -->
-                                <!-- Artist Image -->
-                                <div class="image tile is-child">
-                                    <img id="artistThumb" class="image" alt="Artist Image">
-                                    <!-- </div> -->
-                                </div>
-
-                                <!-- <div class="column is-6 level-item"> -->
-                                <!-- Artist Info -->
-                                <h1 id="artistName" class="title is-1 has-text-left"></h1>
-                                <table class="table">
-                                    <tbody id="artistTable"></tbody>
-                                </table>
-                                <!-- </div> -->
-                            </div>
-
-                        </div>
-
-                        <!-- MapArtistSample Closes -->
+                        <table class="table is-fullwidth">
+                            <tbody id="artistTable"></tbody>
+                        </table>
+                        <!-- </div> -->
                     </div>
 
+                    <div class="divider"></div>
+                    
                     <!-- Artist Bio -->
-                    <div class="tile is-child">
-                        <!-- Discography Here -->
-                        <div id="discBox" class="content is-outlined has-text-left">
-                            <h1 id="discHead" class="title is-2"></h1>
-                            <div class="tile is-ancestor">
-                                <ul id="discList" class="tile is-parent is-vertical is-marginless"></ul>
-                            </div>
+
+                    <!-- Discography Here -->
+                    <div id="discBox" class="content is-outlined has-text-left">
+                        <h1 id="discHead" class="title is-3"></h1>
+                        <div class="tile is-ancestor">
+                            <ul id="discList" class="tile is-parent is-vertical is-marginless"></ul>
                         </div>
                     </div>
 
-                    <!-- Content Div closes -->
+                    <!-- Top Tracks Here -->
+                    <div id="topBox" class="content is-outlined has-text-left">
+                        <h1 id="topHead" class="title is-3"></h1>
+                        <div class="tile is-ancestor">
+                            <ul id="topList" class="tile is-parent is-vertical is-marginless"></ul>
+                        </div>
+                    </div>
                 </div>
-
+                <!-- Content Div closes -->
                 <!-- Event Div -->
-                <div class="tile is-parent">
-                    <a id="topEvent"></a>
+                <div class="column event-col">
                     <div id="eventBox" class="content is-outlined has-text-left">
-                        <h1 id="eventHead" class="title is-2"></h1>
                         <div class="tile is-ancestor">
                             <ul id="eventList" class="tile is-parent is-vertical is-marginless"></ul>
                         </div>
-                        <nav id="pageDiv" class="pagination" role="navigation" aria-label="pagination">
+                        <nav id="pageDiv" class="pagination">
                             <a id="pagePrev" class="pagination-previous">Previous</a>
                             <div class="pageInputGroup pagination-list">
                                 <input type="number" id="pageInput" class="input" min="1">
@@ -140,11 +121,10 @@
                         </nav>
                     </div>
                 </div>
-
-        </section>
-        </div>
-
+            </div>
     </main>
+
+    <div class="divider"></div>
 
     <!-- Footer -->
     <footer class="footer">

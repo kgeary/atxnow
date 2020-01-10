@@ -6,8 +6,12 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    background-image: linear-gradient(to bottom right, #9c1c1f, #f19429);
+    background-image: linear-gradient(to bottom right, #f3a449, #9c1c1f);
     font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+}
+
+.title, .content h1 {
+    color: whitesmoke;
 }
 
 #ATX-Title {
@@ -38,30 +42,34 @@ main {
 
 #artistInfo {
     display: none;
-    margin-top: 3rem;
+    color: whitesmoke;
 }
 
 .control {
     box-shadow: 5px 5px 5px rgba(128, 128, 128, 0.596)
 }
 
-.table, .box {
-    background-color: #f19429;
+.table, .box, #pageInput,.table th {
+    background-color: #25141c;
     border-radius: 10px;
+    color: whitesmoke;
 }
 
 #artistTable td {
     /* width: 100%; */
     max-height: 200px;
     overflow: auto;
+    color: whitesmoke;
 }
 
 #artistThumb {
-    border-radius: 20px;
+    /* width: 100%; */
+    border-radius: 10px;
 }
 
 #pageDiv {
     display: none;
+    color: whitesmoke;
 }
 
 #pageList {
@@ -69,10 +77,20 @@ main {
 }
 
 #map {
-    display: block;
-    overflow: hidden;
-    height: 300px;
-    width: 400px;
+    height: 400px;
+    width: 100%;
+}
+
+#mapBox {
+    flex-grow: 0;
+    display: none;
+    padding: 1rem;
+    color: whitesmoke;
+}
+
+.user-location-icon {
+    background-color: red;
+    color: white;
 }
 
 .divider {
@@ -84,7 +102,7 @@ main {
     text-align: center;
 }
 
-@media only screen and (max-width: 676px) {
+@media only screen and (max-width: 768px) {
     .table {
         width: 100%;
     }
@@ -99,8 +117,13 @@ main {
         padding: 1rem 0rem;
     }
 
-    #map {
+    #mapBox {
         width: 100%;
+        flex-grow: 1;
+    }
+
+    #map {
+        height: 500px;
     }
 
     #pageInput {
@@ -109,5 +132,16 @@ main {
     }
     .pageInputGroup {
         order: 1;
+    }
+
+    .columns-container {
+        display: flex;
+        flex-direction: column-reverse;
+    }
+}
+
+@media only screen and (max-width: 500px) {
+    #map {
+        height: 350px;
     }
 }
