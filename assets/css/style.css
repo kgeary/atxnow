@@ -10,6 +10,10 @@ body {
     font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
 }
 
+.title, .content h1 {
+    color: whitesmoke;
+}
+
 #ATX-Title {
     color: whitesmoke;
 }
@@ -38,21 +42,24 @@ main {
 
 #artistInfo {
     display: none;
+    color: whitesmoke;
 }
 
 .control {
     box-shadow: 5px 5px 5px rgba(128, 128, 128, 0.596)
 }
 
-.table, .box, #pageInput {
-    background-color: #f19429;
+.table, .box, #pageInput,.table th {
+    background-color: #25141c;
     border-radius: 10px;
+    color: whitesmoke;
 }
 
 #artistTable td {
     /* width: 100%; */
     max-height: 200px;
     overflow: auto;
+    color: whitesmoke;
 }
 
 #artistThumb {
@@ -62,6 +69,7 @@ main {
 
 #pageDiv {
     display: none;
+    color: whitesmoke;
 }
 
 #pageList {
@@ -77,6 +85,7 @@ main {
     flex-grow: 0;
     display: none;
     padding: 1rem;
+    color: whitesmoke;
 }
 
 .user-location-icon {
