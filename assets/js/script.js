@@ -289,7 +289,9 @@ function getLocalEventsPromise() {
 // 1. Get the user location from IP
 // 2. Get the Events upcoming for that location.
 //=====================================================================
-function getAreaEvents() {
+function getAreaEvents(initial = false) {
+    // if (initial) location.href = "#heroBlock";
+  
     // 1. API REQUEST - Look up the User Location based off IP Address
     // 2. API REQUEST - Find Metro Areas based off Location Data
     // 3. API REQUESTS - Request Event Info from Each Metro Area
@@ -309,6 +311,11 @@ function getAreaEvents() {
             user.zoom = ZOOM_LOCAL;
             user.caption = "Local Area Events";
             displayEvents(); // Display the Events on the Page
+            if (initial) {
+                location.href = "#heroBlock";
+            } else {
+                location.href = "#topEvent";
+            }
         })
         .catch(function (error) {
             //======================================================
@@ -882,4 +889,4 @@ function getKey(str) {
 L.mapquest.key = getKey(mq_key);
 
 // Get Concert Data for the current location
-getAreaEvents();
+getAreaEvents(true);
