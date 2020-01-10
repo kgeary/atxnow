@@ -382,9 +382,8 @@ function getArtistData(strArtist) {
             displayArtist(user.artist);
             inputArtistEl.value = "";
             // Scroll to results
-            // scrollWin();
-            location.href = "#eventHead";
             heroBlockEl.classList.remove("is-large");
+            location.href = "#eventHead";
         })
         .catch(function (error) {
             //=====================================================
