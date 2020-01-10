@@ -102,7 +102,8 @@ btnSearchEl.addEventListener("click", function () {
     eventHeadEl.textContent = "";
     discListEl.innerHTML = "";
     discHeadEl.textContent = "";
-    // topVideoEl.innerHTML = "";
+    topVideoEl.innerHTML = "";
+    topTrackNameEl.textContent = "";
     topHeadEl.textContent = "";
     thumbEl.setAttribute("src", "");
     thumbEl.setAttribute("alt", "Artist Image");
@@ -859,9 +860,14 @@ function displayTracks(tracks) {
 
     if (tracks.length < 1) {
         topHeadEl.textContent = "Top Tracks Not Available";
-        return;
-    }
+        topPrevEl.setAttribute("style", "display: none;");
+        topNextEl.setAttribute("style", "display: none;");
 
+        return;
+    } else if (tracks.length > 1) {
+        topPrevEl.setAttribute("style", "display: initial;");
+        topNextEl.setAttribute("style", "display: intitial;");
+    }
     topHeadEl.textContent = "Top " + tracks.length + " tracks";
     var track = tracks[user.trackIndex];
 
