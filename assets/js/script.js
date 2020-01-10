@@ -42,8 +42,12 @@ const discListEl = document.getElementById("discList");
 const discHeadEl = document.getElementById("discHead");
 
 // Top Tracks
-const topListEl = document.getElementById("topList");
+const topVideoEl = document.getElementById("topVideo");
+const topBoxEl = document.getElementById("topBox");
 const topHeadEl = document.getElementById("topHead");
+const topTrackNameEl = document.getElementById("topTrackName");
+const topNextEl = document.getElementById("topNext");
+const topPrevEl = document.getElementById("topPrev");
 
 // Map
 const mapEl = document.getElementById("map");
@@ -80,6 +84,7 @@ let user = {
     lastSearch: "",
     events: undefined,
     caption: "",
+    trackIndex: 0,
 }
 
 //==============================================================================
@@ -97,13 +102,15 @@ btnSearchEl.addEventListener("click", function () {
     eventHeadEl.textContent = "";
     discListEl.innerHTML = "";
     discHeadEl.textContent = "";
-    topListEl.innerHTML = "";
+    // topVideoEl.innerHTML = "";
     topHeadEl.textContent = "";
     thumbEl.setAttribute("src", "");
     thumbEl.setAttribute("alt", "Artist Image");
     artistInfoEl.setAttribute("style", "display: none;");
     pageDivEl.setAttribute("style", "display: none;");
     mapBoxEl.setAttribute("style", "display: none;");
+    topBoxEl.setAttribute("style", "display: none;");
+    user.trackIndex = 0;
 
     // Handle the user input
     let strArtist = inputArtistEl.value.trim();
@@ -168,6 +175,29 @@ pageInputEl.addEventListener("keypress", function (event) {
     }
 });
 
+// Next Button Click Track
+// Increment the page number and try to load it
+//=====================================================================
+topNextEl.addEventListener("click", function (event) {
+    event.preventDefault();
+    user.trackIndex++;
+    if (user.trackIndex >= user.artist.tracks.length) {
+        user.trackIndex = 0;
+    }
+    displayTracks(user.artist.tracks);
+});
+//=====================================================================
+// Previous Button Click Track
+// Decrement the page number and try to load it
+//=====================================================================
+topPrevEl.addEventListener("click", function (event) {
+    event.preventDefault();
+    user.trackIndex--;
+    if (user.trackIndex < 0) {
+        user.trackIndex = user.artist.tracks.length - 1;
+    }
+    displayTracks(user.artist.tracks);
+});
 //==============================================================================
 // Helper Functions
 //==============================================================================
@@ -291,7 +321,7 @@ function getLocalEventsPromise() {
 //=====================================================================
 function getAreaEvents(initial = false) {
     // if (initial) location.href = "#heroBlock";
-  
+
     // 1. API REQUEST - Look up the User Location based off IP Address
     // 2. API REQUEST - Find Metro Areas based off Location Data
     // 3. API REQUESTS - Request Event Info from Each Metro Area
@@ -406,7 +436,7 @@ function clearMap() {
         user.map.off();
         user.map.remove();
         user.map = null;
-        mapBoxEl.setAttribute("style", "display: block;");      
+        mapBoxEl.setAttribute("style", "display: block;");
     }
 }
 
@@ -432,14 +462,14 @@ function drawMap(center, markers) {
     var clusters = L.markerClusterGroup();
 
     // Add a marker for the center location
-    L.marker(L.latLng(parseFloat(center.lat), parseFloat(center.lon)), 
+    L.marker(L.latLng(parseFloat(center.lat), parseFloat(center.lon)),
         {
             title: "Your current location",
             icon: L.mapquest.icons.marker(),
         })
         .bindPopup("Current Location")
         .addTo(user.map);
-  
+
     // Add each marker in the array to the map
     if (markers) {
         markers.forEach(function (marker) {
@@ -463,11 +493,11 @@ function drawMap(center, markers) {
 function getPopup(evt) {
     var popup = "";
     if (evt.uri) {
-        popup += "<a href=\"" + evt.uri + "\">" + evt.name + "</a><br>"; 
+        popup += "<a href=\"" + evt.uri + "\">" + evt.name + "</a><br>";
     } else {
         popup += evt.name + "<br>";
     }
-    popup += "@ " + evt.venue + "<br>";     
+    popup += "@ " + evt.venue + "<br>";
     popup += "<img src=\"" + evt.image + "\" width=\"100px\">";
     return popup;
 }
@@ -823,7 +853,8 @@ function displayAlbums(albums) {
 // returns: none
 //====================================================================
 function displayTracks(tracks) {
-    topListEl.innerHTML = "";
+
+    topBoxEl.setAttribute("style", "display: block;");
 
     if (tracks.length < 1) {
         topHeadEl.textContent = "Top Tracks Not Available";
@@ -831,24 +862,13 @@ function displayTracks(tracks) {
     }
 
     topHeadEl.textContent = "Top " + tracks.length + " tracks";
-    tracks.forEach(function (track) {
-        let li = document.createElement("li");
-        // Name
-        let pName = document.createElement("h3");
-        pName.textContent = track.name;
-        // Album
-        let pAlbum = document.createElement("h5");
-        pAlbum.textContent = track.album;
-        // Youtube Link
-        let video = document.createElement("div");
-        video.innerHTML = getYouTube(track.video);
+    var track = tracks[user.trackIndex];
 
-        li.appendChild(pName);
-        li.appendChild(pAlbum);
-        li.appendChild(video);
-        li.setAttribute("class", "tile is-child");
-        topListEl.appendChild(li);
-    });
+    // Youtube Link
+
+    topVideoEl.innerHTML = getYouTube(track.video);
+    topTrackNameEl.textContent = track.name;
+
 }
 
 //====================================================================
