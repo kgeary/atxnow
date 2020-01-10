@@ -12,7 +12,6 @@ const ZOOM_DEFAULT = 12;
 //==============================================================================
 // Containers
 const artistInfoEl = document.getElementById("artistInfo");
-const heroBlockEl = document.getElementById("heroBlock");
 
 // Artist Search
 const btnSearchEl = document.getElementById("btnSearch");
@@ -45,7 +44,12 @@ const discHeadEl = document.getElementById("discHead");
 const topListEl = document.getElementById("topList");
 const topHeadEl = document.getElementById("topHead");
 
+// Map
+const mapEl = document.getElementById("map");
+const mapHeadEl = document.getElementById("mapHead");
+const mapBoxEl = document.getElementById("mapBox");
 const mq_key = "VRD3y4E9VSKqK3emqpyfILrJCl7sqvg1";
+const tm_key = "MMUvMBsaKW7ZPlfuMivbouAC3cXCU8QF";
 //=====================================================================
 // Dynamically create a table of Artist Information
 // List all the fields in the html that should be included
@@ -85,12 +89,19 @@ let user = {
 //=====================================================================
 btnSearchEl.addEventListener("click", function () {
     // Clear out old listings, elements
+    clearMap();
+    mapHeadEl.textContent = "";
     eventListEl.innerHTML = "";
     eventHeadEl.textContent = "";
     discListEl.innerHTML = "";
+    discHeadEl.textContent = "";
     topListEl.innerHTML = "";
+    topHeadEl.textContent = "";
+    thumbEl.setAttribute("src", "");
+    thumbEl.setAttribute("alt", "Artist Image");
     artistInfoEl.setAttribute("style", "display: none;");
     pageDivEl.setAttribute("style", "display: none;");
+    mapBoxEl.setAttribute("style", "display: none;");
 
     // Handle the user input
     let strArtist = inputArtistEl.value.trim();
@@ -103,6 +114,7 @@ btnSearchEl.addEventListener("click", function () {
     // Set the Loading Status
     labelStatusEl.classList.remove("is-danger");
     labelStatusEl.textContent = "Loading...";
+
 
     // Initialize Paging
     user.page = 1;
@@ -205,13 +217,13 @@ function getResultStr() {
 
     // Build a result string header based on total # of items and current page
     if (total === 0) {
-        result = `No Results for ${noun}`;
+        result = `No events found for ${noun}`;
     } else if (total === 1) {
         result = `${noun}: ${total} result`;
     } else if (total < MAX_DISPLAY_RESULTS) {
         result = `${noun}: ${total} results`;
     } else {
-        result = `${noun}: Results ${first} - ${last} of ${total}`;
+        result = `${noun}: ${first}-${last} of ${total}`;
     }
     return result;
 }
@@ -238,25 +250,25 @@ function getLocationPromise() {
 //  artist = artist object
 //=====================================================================
 function getArtistEventsPromise(artist) {
-    let keyword = "keyword=" + artist.name;
+    let latlng = "latlong=" + user.location.lat + "," + user.location.lon;
+    let keyword = "&keyword=" + artist.name;
     let startDate = "&startDateTime=" + moment().format("YYYY-MM-DDT00:00:00Z");
     let sort = "&sort=date,asc";
     let size = "&size=" + MAX_TM_RESSPONSE_SIZE;
     let classification = "&classificationName=Music";
     let country = "&countryCode=US";
     let artistUrl = "https://app.ticketmaster.com/discovery/v2/events?" +
-        keyword + startDate + sort + size + country + classification +
-        "&apikey=FQ8UCXc3CAuobviMuflPZ7WKasBMvUMM";
+        latlng + keyword + startDate + sort + size + country + classification +
+        "&apikey=" + getKey(tm_key);
     return axios.get(artistUrl);
 }
 
 //=====================================================================
 // Get a Promise to retrieve the Events for a Location
-//  loc = location object
 //=====================================================================
-function getLocalEventsPromise(loc) {
+function getLocalEventsPromise() {
     const radiusMiles = MAX_DISTANCE_LOCAL;
-    let latlng = "latlong=" + loc.lat + "," + loc.lon;
+    let latlng = "latlong=" + user.location.lat + "," + user.location.lon;
     let startDate = "&startDateTime=" + moment().format("YYYY-MM-DDT00:00:00Z");
     let radius = "&radius=" + radiusMiles + "&unit=miles";
     let sort = "&sort=date,asc";
@@ -265,7 +277,7 @@ function getLocalEventsPromise(loc) {
     let country = "&countryCode=US";
     let locationUrl = "https://app.ticketmaster.com/discovery/v2/events?" +
         latlng + startDate + radius + sort + size + country + classification +
-        "&apikey=FQ8UCXc3CAuobviMuflPZ7WKasBMvUMM";
+        "&apikey=" + getKey(tm_key);
     console.log("Location Events URL", locationUrl);
     return axios.get(locationUrl);
 }
@@ -282,7 +294,7 @@ function getAreaEvents() {
     getLocationPromise()
         .then(function (locationData) {
             // Get Events for our location here!!!
-            return getLocalEventsPromise(locationData);
+            return getLocalEventsPromise();
         })
         .then(function (response) {
             // Parse and Display The Events
@@ -290,10 +302,11 @@ function getAreaEvents() {
             let events = parseEvents(response);
             return events;
         }).then(function (events) {
-            labelStatusEl.textContent = ""; // Update the status label
+            labelStatusEl.textContent = " "; // Update the status label
             user.events = events; // Cache the area events
+            user.zoom = ZOOM_LOCAL;
+            user.caption = "Local Area Events";
             displayEvents(); // Display the Events on the Page
-            mapData(user.location, user.events, ZOOM_LOCAL);
         })
         .catch(function (error) {
             //======================================================
@@ -356,11 +369,12 @@ function getArtistData(strArtist) {
             // Parse and Display The Events
             console.log("Artist Events", response);
             user.events = parseEvents(response);
-            mapData(user.location, user.events, ZOOM_ARTIST);
+            user.caption = "Concerts for " + user.artist.name;
             displayArtist(user.artist);
             inputArtistEl.value = "";
             // Scroll to results
-            scrollWin()
+            // scrollWin();
+            location.href = "#topEvent";
         })
         .catch(function (error) {
             //=====================================================
@@ -376,41 +390,77 @@ function getArtistData(strArtist) {
 }
 
 //=====================================================================
-// Map the Current Location and Set Markers
-// loc = location object with lat and lon properties
-// markers = location object with lat and lon properties
-// zoom = Zoom Factor (6=Country, )
+// Clear an existing map from the screen
 //=====================================================================
-function mapData(loc, markers, zoom = user.zoom) {
+function clearMap() {
     if (user.map) {
         user.map.off();
         user.map.remove();
-    }
-
-    // Map the user location
-    user.map = L.mapquest.map('map', {
-        center: [parseFloat(loc.lat), parseFloat(loc.lon)],
-        layers: L.mapquest.tileLayer('map'),
-        zoom: zoom
-    });
-
-    // Add each marker in the array to the map
-    if (markers) {
-        markers.forEach(function (marker) {
-            var latlng = L.latLng(parseFloat(marker.lat), parseFloat(marker.lon));
-            L.marker(latlng, {
-                title: marker.name || "No Title Yet",
-            }).addTo(user.map);
-        });
+        user.map = null;
+        mapBoxEl.setAttribute("style", "display: block;");      
     }
 }
 
 //=====================================================================
-// Map the User Location and Set a Marker
+// Map the Current Location and Set Markers
+// center = center location for the map using {lat, lon} properties
+// markers = event array to draw markers for
 //=====================================================================
-function mapUser() {
-    user.location.name = "Your Approximate Location";
-    mapData(user.location, [user.location], 16);
+function drawMap(center, markers) {
+    clearMap();
+
+    mapHeadEl.textContent = user.caption || "This is a map";
+
+    mapBoxEl.setAttribute("style", "display: block;");
+
+    // Map the user location
+    user.map = L.mapquest.map('map', {
+        center: [parseFloat(center.lat), parseFloat(center.lon)],
+        layers: L.mapquest.tileLayer('map'),
+        zoom: user.zoom
+    });
+
+    var clusters = L.markerClusterGroup();
+
+    // Add a marker for the center location
+    L.marker(L.latLng(parseFloat(center.lat), parseFloat(center.lon)), 
+        {
+            title: "Your current location",
+            icon: L.mapquest.icons.marker(),
+        })
+        .bindPopup("Current Location")
+        .addTo(user.map);
+  
+    // Add each marker in the array to the map
+    if (markers) {
+        markers.forEach(function (marker) {
+            var latlng = L.latLng(parseFloat(marker.lat), parseFloat(marker.lon));
+            var options = {
+                title: marker.name || "No Title Provided",
+                // icon: L.mapquest.icons.marker(),
+            }
+            var mark = L.marker(latlng, options);
+            mark.bindPopup(getPopup(marker));
+            clusters.addLayer(mark);
+        });
+        user.map.addLayer(clusters);
+        console.log("Map OK");
+    }
+}
+
+//=====================================================================
+// Create the HTML for a map marker pop-up
+//=====================================================================
+function getPopup(evt) {
+    var popup = "";
+    if (evt.uri) {
+        popup += "<a href=\"" + evt.uri + "\">" + evt.name + "</a><br>"; 
+    } else {
+        popup += evt.name + "<br>";
+    }
+    popup += "@ " + evt.venue + "<br>";     
+    popup += "<img src=\"" + evt.image + "\" width=\"100px\">";
+    return popup;
 }
 
 //=====================================================================
@@ -477,11 +527,15 @@ function parseEvents(response) {
     events.forEach(function (evt) {
         //console.log("TicketMaster Event Details", evt);
         let venue = evt._embedded.venues[0];
+        let imageUrl = "";
+        if (evt.images && evt.images[0].url) {
+            imageUrl = evt.images[0].url;
+        }
         //console.log("venue", venue);
         respEvents.push({
             id: evt.id,
             name: evt.name,
-            type: evt.type,
+            image: imageUrl,
             uri: evt.url,
             startDate: evt.dates.start.localDate,
             startTime: evt.dates.start.localTime,
@@ -571,11 +625,10 @@ function parseTracks(topTracks) {
 //=====================================================================
 function displayEvents(displayNewDayHeading = true) {
     let events = user.events;
-    let heading = getResultStr();
     let limit = MAX_DISPLAY_RESULTS;
 
     // Set the Event Section Heading
-    eventHeadEl.textContent = heading;
+    eventHeadEl.textContent = getResultStr();
     // Clear the current Event List from HTML
     eventListEl.innerHTML = "";
     // Keep track of iteration in order to process at most 'limit' results
@@ -593,18 +646,18 @@ function displayEvents(displayNewDayHeading = true) {
         if (index++ >= limit) return;   // Check to see if we are at the limit
 
         let div = createEl("div", "box"); // Create an event container div
-        let h1 = createEl("h4", "title"); // Create a h1 for Event Name
-        div.appendChild(h1);
+        let eventTitle = createEl("h4", "title"); // Create a heading for Event Name
+        div.appendChild(eventTitle);
 
         // Create a Link to Event Details.
-        let headLink = createLink(event.name, "title event-link", event.uri);
-        h1.appendChild(headLink);
+        let headLink = createLink(event.name, "title is-4 event-link", event.uri);
+        eventTitle.appendChild(headLink);
 
         // if event is close by... Create a Local Event Span
         if (event.distance < MAX_DISTANCE_LOCAL) {
             headLink.classList.add("has-text-weight-bold");
             let span = createEl("span", "local-event", "LOCAL");
-            h1.appendChild(span);
+            eventTitle.appendChild(span);
         }
 
         // Create a p for City, State, Start Date/Time, Distance to Event
@@ -625,7 +678,7 @@ function displayEvents(displayNewDayHeading = true) {
         if (displayNewDayHeading && lastOutputTime !== event.startDate) {
             let dayMarkerContainer = createEl("div", "dayMarker");
             eventListEl.appendChild(dayMarkerContainer);
-            let dayHeading = createEl("h1", "tite", moment(event.startDate, "YYYY-MM-DD").format("dddd, MMMM Do YYYY"));
+            let dayHeading = createEl("h1", "title is-4", moment(event.startDate, "YYYY-MM-DD").format("dddd, MMMM Do YYYY"));
             dayMarkerContainer.appendChild(dayHeading);
         }
 
@@ -638,6 +691,7 @@ function displayEvents(displayNewDayHeading = true) {
 
     // Update the paging to reflect the new event list
     updatePaging();
+    drawMap(user.location, pageEvents);
 }
 
 //=====================================================================
@@ -681,6 +735,8 @@ function createEl(tag, cls, text = undefined) {
 //=====================================================================
 function displayArtist(artist) {
     //console.log("Displaying Artist");
+    // Set the map zoom to ARTIST
+    user.zoom = ZOOM_ARTIST;
 
     // Clear Out the old table
     artistTableEl.innerHTML = "";
@@ -702,7 +758,7 @@ function displayArtist(artist) {
     // Make sure the results window is showing
     artistInfoEl.setAttribute("style", "display: initial;");
     // Clear the loading status
-    labelStatusEl.textContent = "";
+    labelStatusEl.textContent = " ";
 }
 
 //=====================================================================
