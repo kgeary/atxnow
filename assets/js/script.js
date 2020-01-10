@@ -12,6 +12,7 @@ const ZOOM_DEFAULT = 12;
 //==============================================================================
 // Containers
 const artistInfoEl = document.getElementById("artistInfo");
+const heroBlockEl = document.getElementById("heroBlock");
 
 // Artist Search
 const btnSearchEl = document.getElementById("btnSearch");
@@ -54,7 +55,7 @@ const tm_key = "MMUvMBsaKW7ZPlfuMivbouAC3cXCU8QF";
 // Dynamically create a table of Artist Information
 // List all the fields in the html that should be included
 // description - Table heading cell text
-// field - Name of the field in artist object
+// field - Name of the field from artist object
 //=====================================================================
 const artistTableParams = [
     { description: "Name", field: "name" },
@@ -78,6 +79,7 @@ let user = {
     page: 1,
     lastSearch: "",
     events: undefined,
+    caption: "",
 }
 
 //==============================================================================
@@ -375,6 +377,7 @@ function getArtistData(strArtist) {
             // Scroll to results
             // scrollWin();
             location.href = "#topEvent";
+            heroBlockEl.classList.remove("is-large");
         })
         .catch(function (error) {
             //=====================================================

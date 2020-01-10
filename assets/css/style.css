@@ -69,9 +69,7 @@ main {
 }
 
 #map {
-    /* display: block; */
-    /* overflow: hidden; */
-    height: 350px;
+    height: 400px;
     width: 100%;
 }
 
@@ -95,12 +93,6 @@ main {
     text-align: center;
 }
 
-@media only screen and (max-width: 875px) {
-    #map {
-        height: 300px;
-    }
-}
-
 @media only screen and (max-width: 768px) {
     .table {
         width: 100%;
@@ -121,6 +113,10 @@ main {
         flex-grow: 1;
     }
 
+    #map {
+        height: 500px;
+    }
+
     #pageInput {
         width: 50px;
         text-align: center;
@@ -132,5 +128,11 @@ main {
     .columns-container {
         display: flex;
         flex-direction: column-reverse;
+    }
+}
+
+@media only screen and (max-width: 500px) {
+    #map {
+        height: 350px;
     }
 }
