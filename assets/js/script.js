@@ -874,6 +874,7 @@ function displayTracks(tracks) {
     // Youtube Link
 
     topVideoEl.innerHTML = getYouTube(track.video);
+    console.log(topVideoEl.innerHTML);
     topTrackNameEl.textContent = track.name;
 
 }
@@ -886,7 +887,7 @@ function getYouTube(src) {
     if (!src) {
         return '';
     } else if (!src.includes("youtube.com/embed/")) {
-        src = src.replace("www.youtube.com/", "www.youtube.com/embed/");
+        src = src.replace("www.youtube.com/watch?v=", "www.youtube.com/embed/");
     }
     return '<iframe src="' + src + '" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
 }
