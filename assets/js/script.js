@@ -284,7 +284,7 @@ function getLocationPromise() {
 function getArtistEventsPromise(artist) {
     let latlng = "latlong=" + user.location.lat + "," + user.location.lon;
     let keyword = "&keyword=" + artist.name;
-    let startDate = "&startDateTime=" + moment().format("YYYY-MM-DDT00:00:00Z");
+    let startDate = "&startDateTime=" + moment().format("YYYY-MM-DDT00:00:00[Z]");
     let sort = "&sort=date,asc";
     let size = "&size=" + MAX_TM_RESSPONSE_SIZE;
     let classification = "&classificationName=Music";
@@ -301,7 +301,7 @@ function getArtistEventsPromise(artist) {
 function getLocalEventsPromise() {
     const radiusMiles = MAX_DISTANCE_LOCAL;
     let latlng = "latlong=" + user.location.lat + "," + user.location.lon;
-    let startDate = "&startDateTime=" + moment().format("YYYY-MM-DDT00:00:00Z");
+    let startDate = "&startDateTime=" + moment().format("YYYY-MM-DDT00:00:00[Z]");
     let radius = "&radius=" + radiusMiles + "&unit=miles";
     let sort = "&sort=date,asc";
     let size = "&size=" + MAX_TM_RESSPONSE_SIZE;
@@ -807,6 +807,7 @@ function displayArtist(artist) {
 function displayArtistTable(artist) {
     // Configure Each parameter in the table
     artistTableParams.forEach(function (param) {
+        if (!artist[param.field]) return;
         let row = document.createElement("tr");
         let col1 = document.createElement("th");
         col1.textContent = param.description;

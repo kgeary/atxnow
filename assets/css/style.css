@@ -6,7 +6,7 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    background-image: linear-gradient(to bottom right, #9c1c1f, #f19429);
+    background-image: linear-gradient(to bottom right, #f3a449, #9c1c1f);
     font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
 }
 
