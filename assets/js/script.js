@@ -202,7 +202,7 @@ function loadPage() {
     displayEvents();
 
     // Send the user back to the top of the event list
-    location.href = "#topEvent";
+    location.href = "#eventHead";
 }
 
 //=====================================================================
@@ -314,7 +314,7 @@ function getAreaEvents(initial = false) {
             if (initial) {
                 location.href = "#heroBlock";
             } else {
-                location.href = "#topEvent";
+                location.href = "#eventHead";
             }
         })
         .catch(function (error) {
@@ -383,7 +383,7 @@ function getArtistData(strArtist) {
             inputArtistEl.value = "";
             // Scroll to results
             // scrollWin();
-            location.href = "#topEvent";
+            location.href = "#eventHead";
             heroBlockEl.classList.remove("is-large");
         })
         .catch(function (error) {
