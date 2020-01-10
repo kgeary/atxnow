@@ -102,6 +102,19 @@ main {
     text-align: center;
 }
 
+#topBox {
+    display: none;
+}
+
+#topVideo {
+    width: 200px;
+    height: 200px;
+}
+
+#topTrackName, #topPrev, #topNext {
+    color: white;
+}
+
 @media only screen and (max-width: 768px) {
     .table {
         width: 100%;
