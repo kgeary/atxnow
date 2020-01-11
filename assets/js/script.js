@@ -82,7 +82,9 @@ let user = {
     zoom: ZOOM_DEFAULT,
     page: 1,
     lastSearch: "",
-    events: undefined,
+    events: [],
+    totalEvents: 0,
+    maxPage: 1,
     caption: "",
     trackIndex: 0,
 }
@@ -112,6 +114,7 @@ btnSearchEl.addEventListener("click", function () {
     mapBoxEl.setAttribute("style", "display: none;");
     topBoxEl.setAttribute("style", "display: none;");
     user.trackIndex = 0;
+    user.events = [];
 
     // Handle the user input
     let strArtist = inputArtistEl.value.trim();
@@ -199,6 +202,7 @@ topPrevEl.addEventListener("click", function (event) {
     }
     displayTracks(user.artist.tracks);
 });
+
 //==============================================================================
 // Helper Functions
 //==============================================================================
@@ -222,8 +226,8 @@ function loadPage() {
         user.page = 1;
         pageInputEl.value = user.page;
         return;
-    } else if ((user.page - 1) * MAX_DISPLAY_RESULTS >= user.events.length) {
-        user.page = Math.ceil(user.events.length / MAX_DISPLAY_RESULTS);
+    } else if ((user.page - 1) * MAX_DISPLAY_RESULTS >= user.totalEvents) {
+        user.page = Math.ceil(user.totalEvents / MAX_DISPLAY_RESULTS);
         pageInputEl.value = user.page;
         return;
     }
@@ -245,7 +249,7 @@ function getResultStr() {
     let first = ((page - 1) * MAX_DISPLAY_RESULTS) + 1;
     let last = Math.min(user.events.length, page * MAX_DISPLAY_RESULTS);
     let noun = user.lastSearch;
-    let total = user.events.length;
+    let total = user.totalEvents; //user.events.length;
     let result;
 
     // Build a result string header based on total # of items and current page
@@ -282,16 +286,17 @@ function getLocationPromise() {
 // Get a Promise to retrieve the Events for an Artist
 //  artist = artist object
 //=====================================================================
-function getArtistEventsPromise(artist) {
+function getArtistEventsPromise(artist, pageIndex=0) {
     let latlng = "latlong=" + user.location.lat + "," + user.location.lon;
     let keyword = "&keyword=" + artist.name;
     let startDate = "&startDateTime=" + moment().format("YYYY-MM-DDT00:00:00[Z]");
     let sort = "&sort=date,asc";
     let size = "&size=" + MAX_TM_RESSPONSE_SIZE;
+    let page = "&page=" + pageIndex;
     let classification = "&classificationName=Music";
     let country = "&countryCode=US";
     let artistUrl = "https://app.ticketmaster.com/discovery/v2/events?" +
-        latlng + keyword + startDate + sort + size + country + classification +
+        latlng + keyword + startDate + sort + size + page + country + classification +
         "&apikey=" + getKey(tm_key);
     return axios.get(artistUrl);
 }
@@ -299,19 +304,19 @@ function getArtistEventsPromise(artist) {
 //=====================================================================
 // Get a Promise to retrieve the Events for a Location
 //=====================================================================
-function getLocalEventsPromise() {
+function getLocalEventsPromise(pageIndex=0) {
     const radiusMiles = MAX_DISTANCE_LOCAL;
     let latlng = "latlong=" + user.location.lat + "," + user.location.lon;
     let startDate = "&startDateTime=" + moment().format("YYYY-MM-DDT00:00:00[Z]");
     let radius = "&radius=" + radiusMiles + "&unit=miles";
     let sort = "&sort=date,asc";
     let size = "&size=" + MAX_TM_RESSPONSE_SIZE;
+    let page = "&page=" + pageIndex;
     let classification = "&classificationName=Music";
     let country = "&countryCode=US";
     let locationUrl = "https://app.ticketmaster.com/discovery/v2/events?" +
-        latlng + startDate + radius + sort + size + country + classification +
+        latlng + startDate + radius + sort + size + page + country + classification +
         "&apikey=" + getKey(tm_key);
-    console.log("Location Events URL", locationUrl);
     return axios.get(locationUrl);
 }
 
@@ -344,13 +349,27 @@ function getAreaEvents(initial = false) {
             } else {
                 location.href = "#eventHead";
             }
+            // Request remaining pages
+            let promises = [];
+            for(let index = 1; index < user.maxPage; index++) {
+                promises.push(getLocalEventsPromise(index));
+            }
+            return Promise.all(promises);
+        })
+        .then(function (values) {
+            values.forEach(function(response) {
+                console.log("PromiseAll", response);
+                user.events.push(...parseEvents(response));
+            });
+            displayEvents();
+            console.log("ALL EVENTS RECEIVED", user.events.length);
         })
         .catch(function (error) {
             //======================================================
             // ERROR ENCOUNTERED
             //======================================================
             console.log("Error Getting Data!!!!");
-            console.log(error);
+            console.log(error.message);
         });
 }
 
@@ -412,6 +431,20 @@ function getArtistData(strArtist) {
             // Scroll to results
             heroBlockEl.classList.remove("is-large");
             location.href = "#eventHead";
+
+            // Request remaining pages
+            let promises = [];
+            for(let index = 1; index < user.maxPage; index++) {
+                promises.push(getArtistEventsPromise(user.artist, index));
+            }
+            return Promise.all(promises);
+        })
+        .then(function (values) {
+            values.forEach(function(response) {
+                user.events.push(...parseEvents(response));
+            });
+            displayEvents(true);
+            console.log("ALL EVENTS RECEIVED");
         })
         .catch(function (error) {
             //=====================================================
@@ -557,10 +590,15 @@ function parseEvents(response) {
     let respEvents = [];
     if (!response || !response.data || !response.data._embedded) return respEvents;
 
+    // Get the ticketmaster event array. If it doesn't exist return no events
     let events = response.data._embedded.events;
-    if (!events) return respEvents;
 
-    // console.log("EVT", response);
+    // Save the total events and max # of pages
+    user.totalEvents = parseInt(response.data.page.totalElements);
+    user.maxPage = parseInt(response.data.page.totalPages);
+
+    if (!events) return respEvents;
+    console.log("EVT", response);
     events.forEach(function (evt) {
         //console.log("TicketMaster Event Details", evt);
         let venue = evt._embedded.venues[0];
@@ -664,6 +702,7 @@ function displayEvents(redrawMap = true) {
     let events = user.events;
     let limit = MAX_DISPLAY_RESULTS;
 
+    console.log("LEN", events.length);
     // Set the Event Section Heading
     eventHeadEl.textContent = getResultStr();
     // Clear the current Event List from HTML
@@ -729,7 +768,7 @@ function displayEvents(redrawMap = true) {
 
     // Update the paging to reflect the new event list
     updatePaging();
-    if (redrawMap) drawMap(user.location, pageEvents);
+    if (redrawMap) drawMap(user.location, user.events);
 }
 
 //=====================================================================
