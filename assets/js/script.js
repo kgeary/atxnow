@@ -322,7 +322,6 @@ function getLocalEventsPromise() {
 //=====================================================================
 function getAreaEvents(initial = false) {
     // if (initial) location.href = "#heroBlock";
-
     // 1. API REQUEST - Look up the User Location based off IP Address
     // 2. API REQUEST - Find Metro Areas based off Location Data
     // 3. API REQUESTS - Request Event Info from Each Metro Area
@@ -334,11 +333,9 @@ function getAreaEvents(initial = false) {
         .then(function (response) {
             // Parse and Display The Events
             console.log("LOCAL CURRENT EVENTS", response);
-            let events = parseEvents(response);
-            return events;
-        }).then(function (events) {
+            user.events = parseEvents(response);
+            user.lastSearch = user.location.city;
             labelStatusEl.textContent = " "; // Update the status label
-            user.events = events; // Cache the area events
             user.zoom = ZOOM_LOCAL;
             user.caption = "Local Area Events";
             displayEvents(); // Display the Events on the Page
@@ -663,7 +660,7 @@ function parseTracks(topTracks) {
 // Update the HTML to display event info
 // Display a single page of events on the page
 //=====================================================================
-function displayEvents(displayNewDayHeading = true) {
+function displayEvents(redrawMap = true) {
     let events = user.events;
     let limit = MAX_DISPLAY_RESULTS;
 
@@ -715,6 +712,7 @@ function displayEvents(displayNewDayHeading = true) {
 
         // if displayNewDayHeading is enabled...
         // Add a header div when we encounter a new day in the listings
+        const displayNewDayHeading = true;
         if (displayNewDayHeading && lastOutputTime !== event.startDate) {
             let dayMarkerContainer = createEl("div", "dayMarker");
             eventListEl.appendChild(dayMarkerContainer);
@@ -731,7 +729,7 @@ function displayEvents(displayNewDayHeading = true) {
 
     // Update the paging to reflect the new event list
     updatePaging();
-    drawMap(user.location, pageEvents);
+    if (redrawMap) drawMap(user.location, pageEvents);
 }
 
 //=====================================================================
