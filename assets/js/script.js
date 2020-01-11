@@ -166,8 +166,7 @@ pagePrevEl.addEventListener("click", function (event) {
 
 // pageGo click event handler
 pageGoEl.addEventListener("click", function (event) {
-    pageInputEl.value = parseInt(pageInputEl.value);
-    user.page = pageInputEl.value;
+    user.page = parseInt(pageInputEl.value);
     pageInputEl.value = "";
     loadPage();
 });
@@ -226,8 +225,8 @@ function loadPage() {
         user.page = 1;
         pageInputEl.value = user.page;
         return;
-    } else if ((user.page - 1) * MAX_DISPLAY_RESULTS >= user.totalEvents) {
-        user.page = Math.ceil(user.totalEvents / MAX_DISPLAY_RESULTS);
+    } else if ((user.page - 1) * MAX_DISPLAY_RESULTS >= user.events.length) {
+        user.page = Math.ceil(user.events.length / MAX_DISPLAY_RESULTS);
         pageInputEl.value = user.page;
         return;
     }
@@ -285,6 +284,7 @@ function getLocationPromise() {
 //=====================================================================
 // Get a Promise to retrieve the Events for an Artist
 //  artist = artist object
+//  pageIndex (zero-based)
 //=====================================================================
 function getArtistEventsPromise(artist, pageIndex=0) {
     let latlng = "latlong=" + user.location.lat + "," + user.location.lon;
@@ -303,6 +303,7 @@ function getArtistEventsPromise(artist, pageIndex=0) {
 
 //=====================================================================
 // Get a Promise to retrieve the Events for a Location
+//  pageIndex (zero-based)
 //=====================================================================
 function getLocalEventsPromise(pageIndex=0) {
     const radiusMiles = MAX_DISTANCE_LOCAL;
@@ -545,7 +546,8 @@ function updatePaging() {
     if (isDisplayed) {
         // Set the Visibility of Next/Prev based on event list size and page
         let isNextEnabled = (user.page * MAX_DISPLAY_RESULTS < events.length);
-        let isPrevEnabled = (user.page !== 1);
+        let isPrevEnabled = (user.page != 1);
+        console.log(user.page, isPrevEnabled);
         // Set the Next Button
         if (isNextEnabled) {
             pageNextEl.removeAttribute("disabled", "");
