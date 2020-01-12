@@ -80,6 +80,7 @@ main {
     height: 0;
     width: 100%;
     padding-bottom: 80%;
+    border-radius: 10px;
 }
 
 #mapBox {
@@ -124,7 +125,7 @@ main {
 }
 
 #topTrackName, #topPrev, #topNext {
-    color: white;
+    color: whitesmoke;
 }
 
 @media only screen and (max-width: 768px) {
@@ -135,16 +136,11 @@ main {
     #artistTable td {
         width: 100%;
     }
-        
-    .footer {
-        padding: 1rem 0rem;
-    }
-
     #mapBox {
         width: 100%;
         flex-grow: 1;
     }
-
+    /* Page Input */
     #pageInput {
         width: 50px;
         text-align: center;
@@ -152,9 +148,21 @@ main {
     .pageInputGroup {
         order: 1;
     }
-
+    /* Footer */
+    .footer {
+        padding: 1rem 0rem;
+    }
     .columns-container {
         display: flex;
         flex-direction: column-reverse;
+    }
+
+    .foot-columns {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .foot-col-owner {
+        order: -1;
     }
 }
