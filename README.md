@@ -30,7 +30,7 @@ Artist Search
 
 ### Third Party APIs
 1. axios - ajax requests
-2. leaflet - for displaying maps
+2. mapquest/leaflet - for displaying maps
 
 ## Task Breakdown
 Josh

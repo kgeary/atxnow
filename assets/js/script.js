@@ -163,9 +163,24 @@ pagePrevEl.addEventListener("click", function (event) {
     loadPage();
 });
 
+//=====================================================================
+// Last Button Click
+// Go to the last page number and try to load it
+//=====================================================================
+pageLastEl.addEventListener("click", function (event) {
+    event.preventDefault();
+    user.page = parseInt(event.target.textContent);
+    loadPage();
+});
+
 // pageGo click event handler
 pageGoEl.addEventListener("click", function (event) {
-    user.page = parseInt(pageInputEl.value);
+    let input = parseInt(pageInputEl.value);
+    if (Number.isNaN(input)) {
+        pageInputEl.value = user.page;
+        return;
+    }
+    user.page = input;
     pageInputEl.value = "";
     loadPage();
 });
@@ -223,11 +238,9 @@ function loadPage() {
     if (user.page < 1) {
         user.page = 1;
         pageInputEl.value = user.page;
-        return;
     } else if ((user.page - 1) * MAX_DISPLAY_RESULTS >= user.events.length) {
         user.page = Math.ceil(user.events.length / MAX_DISPLAY_RESULTS);
         pageInputEl.value = user.page;
-        return;
     }
 
     // Clear out then re-display the Event Page
@@ -275,7 +288,6 @@ function getLocationPromise() {
     return axios.get(locationUrl)
         .then(function (response) {
             user.location = parseLocation(response);
-            user.lastSearch = user.location.city;
             return user.location;
         });
 }
@@ -372,6 +384,8 @@ function getAreaEvents(initial = false) {
             //======================================================
             console.log("Error Getting Data!!!!");
             console.log(error.message);
+            labelStatusEl.textContent = "Error Getting Initial Data";
+            labelStatusEl.classList.add('is-danger');
         });
 }
 
@@ -402,16 +416,12 @@ function getArtistData(strArtist) {
             // ONCE All Requests have been successfully resolved...   
             // Unpack the individual response values from the responses array 
             let [artistResponse, discResponse, topResponse] = responses;
-
-            //=====================================================
-            // DEBUGGING - Print the Response Objects
-            //=====================================================
             console.log("All Audio DB API Calls Good!");
 
-            //=====================================================
-            // API Was successful but no artists found
-            // throw an error to be caught below
-            //=====================================================
+            //=========================================
+            // If API Was successful but no artists found
+            //   throw an error to be caught below
+            //=========================================
             if (!artistResponse.data.artists) {
                 throw new Error("No Artists Found in Audio DB!");
             }
@@ -421,6 +431,7 @@ function getArtistData(strArtist) {
             user.lastSearch = user.artist.name;
             user.artist.albums = parseAlbums(discResponse.data.album);
             user.artist.tracks = parseTracks(topResponse.data.track);
+            // Call Ticketmaster API to get the artist events
             return getArtistEventsPromise(user.artist);
         })
         .then(function (response) {
@@ -429,24 +440,28 @@ function getArtistData(strArtist) {
             user.events = parseEvents(response);
             user.caption = "Concerts for " + user.artist.name;
 
-            // Request remaining pages
+            // page 0 received. Request remaining pages index [1..maxPageTm)
             let promises = [];
             for (let index = 1; index < user.maxPageTm; index++) {
                 promises.push(getArtistEventsPromise(user.artist, index));
             }
-            return Promise.all(promises);
+            return Promise.all(promises); // return an array of promises for each page remaining
         })
-        .then(function (values) {
-            values.forEach(function (response) {
-                user.events.push(...parseEvents(response));
+        .then(function (responses) {
+            // go through each response in the array
+            // Add additional event results to the user.events array
+            responses.forEach(function (response) {
+                // Using ES6 spread notation to pass new event array to array.push()
+                let newEvents = parseEvents(response);
+                user.events.push(...newEvents);
             });
 
-            // Scroll to results
+            // Display Results and Scroll to Event results start
             displayArtist(user.artist);
             inputArtistEl.value = "";
             heroBlockEl.classList.remove("is-large");
             location.href = "#eventHead";
-            console.log("ALL EVENTS RECEIVED");
+            // console.log("ALL EVENTS RECEIVED");
         })
         .catch(function (error) {
             //=====================================================
@@ -480,9 +495,7 @@ function clearMap() {
 //=====================================================================
 function drawMap(center, markers) {
     clearMap();
-
     mapHeadEl.textContent = user.caption || "This is a map";
-
     mapBoxEl.setAttribute("style", "display: block;");
 
     // Map the user location
@@ -492,24 +505,29 @@ function drawMap(center, markers) {
         zoom: user.zoom
     });
 
-    var clusters = L.markerClusterGroup();
-
-    // Add a marker for the center location
+    // Add a orange marker for the center/user location
+    var userMarker = L.icon({
+        iconUrl: 'https://assets.mapquestapi.com/icon/v2/marker-orange-sm.png',
+        iconRetinaUrl: 'https://assets.mapquestapi.com/icon/v2/marker-orange-sm@2x.png',
+        iconSize: [28, 35],
+        iconAnchor: [14, 35],
+        popupAnchor: [1, -35],
+    });
     L.marker(L.latLng(parseFloat(center.lat), parseFloat(center.lon)),
         {
             title: "Your current location",
-            icon: L.mapquest.icons.marker(),
+            icon: userMarker,
         })
         .bindPopup("Current Location")
         .addTo(user.map);
 
     // Add each marker in the array to the map
+    var clusters = L.markerClusterGroup();
     if (markers) {
         markers.forEach(function (marker) {
             var latlng = L.latLng(parseFloat(marker.lat), parseFloat(marker.lon));
             var options = {
                 title: marker.name || "No Title Provided",
-                // icon: L.mapquest.icons.marker(),
             }
             var mark = L.marker(latlng, options);
             mark.bindPopup(getPopup(marker));
@@ -525,12 +543,12 @@ function drawMap(center, markers) {
 function getPopup(evt) {
     var popup = "";
     if (evt.uri) {
-        popup += "<a href=\"" + evt.uri + "\">" + evt.name + "</a><br>";
+        popup += '<a href="' + evt.uri + '" target="_blank">' + evt.name + '</a><br>';
     } else {
         popup += evt.name + "<br>";
     }
     popup += "@ " + evt.venue + "<br>";
-    popup += "<img src=\"" + evt.image + "\" width=\"100px\">";
+    popup += '<img src="' + evt.image + '" width="100px">';
     return popup;
 }
 
@@ -676,6 +694,7 @@ function parseAlbums(responseAlbums) {
 // returns: Array of track objects
 //======================================================
 function parseTracks(topTracks) {
+    //console.log("TRACKS", topTracks);
     let tracks = [];
 
     // For Each Track in the result list...
@@ -898,7 +917,6 @@ function displayTracks(tracks) {
         topHeadEl.textContent = "Top Tracks Not Available";
         topPrevEl.setAttribute("style", "display: none;");
         topNextEl.setAttribute("style", "display: none;");
-
         return;
     } else if (tracks.length > 1) {
         topPrevEl.setAttribute("style", "display: initial;");
@@ -908,9 +926,13 @@ function displayTracks(tracks) {
     var track = tracks[user.trackIndex];
 
     // Youtube Link
+    if (track.video) {
+        topVideoEl.innerHTML = getYouTube(track.video);
+    } else {
+        topVideoEl.textContent = "Video Not Available";
+    }
 
-    topVideoEl.innerHTML = getYouTube(track.video);
-    console.log(topVideoEl.innerHTML);
+    //console.log(topVideoEl.innerHTML);
     topTrackNameEl.textContent = track.name;
 
 }
@@ -926,18 +948,6 @@ function getYouTube(src) {
         src = src.replace("www.youtube.com/watch?v=", "www.youtube.com/embed/");
     }
     return '<iframe src="' + src + '" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
-}
-
-// ===================================================================
-// AJAX Error Handler
-//   This will be called instead of our success handler if any of the
-//   api requests fail.
-//   1. Update the status label to indicate we have an error 
-// ===================================================================
-function onError(error) {
-    console.log("An Error Occurred");
-    labelStatusEl.textContent = "An Error Occurred - " + error.message;
-    labelStatusEl.classList.add("is-danger");
 }
 
 // making it a little harder for key scrapers
