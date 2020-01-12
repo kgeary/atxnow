@@ -301,7 +301,7 @@ function getArtistEventsPromise(artist, pageIndex = 0) {
     let latlng = "latlong=" + user.location.lat + "," + user.location.lon;
     let keyword = "&keyword=" + artist.name;
     let startDate = "&startDateTime=" + moment().format("YYYY-MM-DDT00:00:00[Z]");
-    let sort = "&sort=date,asc";
+    let sort = "&sort=distance,asc";
     let size = "&size=" + MAX_TM_RESSPONSE_SIZE;
     let page = "&page=" + pageIndex;
     let classification = "&classificationName=Music";
@@ -717,7 +717,7 @@ function parseTracks(topTracks) {
 // Update the HTML to display event info
 // Display a single page of events on the page
 //=====================================================================
-function displayEvents(redrawMap = true) {
+function displayEvents(redrawMap = true, displayNewDayHeading = true) {
     let events = user.events;
     let limit = MAX_DISPLAY_RESULTS;
 
@@ -769,7 +769,6 @@ function displayEvents(redrawMap = true) {
 
         // if displayNewDayHeading is enabled...
         // Add a header div when we encounter a new day in the listings
-        const displayNewDayHeading = true;
         if (displayNewDayHeading && lastOutputTime !== event.startDate) {
             let dayMarkerContainer = createEl("div", "dayMarker");
             eventListEl.appendChild(dayMarkerContainer);
@@ -843,8 +842,8 @@ function displayArtist(artist) {
 
     // Display the artist details table
     displayArtistTable(artist);
-    // Display concerts
-    displayEvents();
+    // Display artist concerts
+    displayEvents(true, false);
     // Display the album discography list
     displayAlbums(artist.albums);
     // Display the top tracks
